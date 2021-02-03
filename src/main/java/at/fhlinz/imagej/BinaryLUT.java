@@ -2,7 +2,7 @@
  *
  * MIT License
  *
- * Copyright (C) 2020 Fabian Hauser
+ * Copyright (C) 2021 Fabian Hauser
  *
  * Author: Fabian Hauser <fabian.hauser@fh-linz.at>
  * University of Applied Sciences Upper Austria - Linz - Austria
@@ -33,27 +33,22 @@ import ij.IJ;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author Fabian Hauser
  */
 public class BinaryLUT implements LUT {
-    private double dLat_;
-    private double dAx_;
-    private double minLat_;
-    private double maxLat_;
-    private double minAx_;
-    private double maxAx_;
-    private int winSize_;
-    private int countLat_;
-    private int countAx_;
-    private int countIndex_;
-    private int pixels_;
-    private double[] templates_;
-    private String fileName_;
+    private double _dLat;
+    private double _dAx;
+    private double _minLat;
+    private double _maxLat;
+    private double _minAx;
+    private double _maxAx;
+    private int _winSize;
+    private int _countIndices;
+    private String _fileName;
+    private double[] _templates;
     
     public BinaryLUT() {
         
@@ -78,10 +73,10 @@ public class BinaryLUT implements LUT {
             FileInputStream in = new FileInputStream(file);
             final long fileSize = file.length();
             final int size = (int)((fileSize - 64) / 8);
-            templates_ = new double[size];
+            _templates = new double[size];
 
             for (int i = 0; i < size; i++) {
-                templates_[i] = readDouble64(in);
+                _templates[i] = readDouble64(in);
                 IJ.showProgress(i, size);
             }
             return true;
@@ -112,32 +107,29 @@ public class BinaryLUT implements LUT {
             ByteBuffer buf = ByteBuffer.wrap(hdr).order(ByteOrder.LITTLE_ENDIAN);
             
             final long dataSize = buf.getLong(8);
-            countIndex_ = (int)buf.getLong(16);
-            winSize_ = (int)buf.getLong(24);
-            dLat_ = buf.getDouble(32);
-            dAx_ = buf.getDouble(40);
+            _countIndices = (int)buf.getLong(16);
+            _winSize = (int)buf.getLong(24);
+            _dLat = buf.getDouble(32);
+            _dAx = buf.getDouble(40);
             final double rangeLat = buf.getDouble(48);
             final double rangeAx = buf.getDouble(56);
             
-            final double borderLat = Math.floor((winSize_ - rangeLat) / 2);
+            final double borderLat = Math.floor((_winSize - rangeLat) / 2);
             if (borderLat < 1.0)
                 return false;
             
-            minLat_ = borderLat;
-            maxLat_ = winSize_ - borderLat;
+            _minLat = borderLat;
+            _maxLat = _winSize - borderLat;
             
-            minAx_ = -0.5 * rangeAx;
-            maxAx_ = 0.5 * rangeAx;
-
-            countLat_ = (int)Math.floor((((getMaxLat() - getMinLat()) / dLat_) + 1));
-            countAx_ = (int)Math.floor(((rangeAx / dAx_) + 1));
+            _minAx = -0.5 * rangeAx;
+            _maxAx = 0.5 * rangeAx;
             
             if (dataSize != (fileSize - 64)) {
                 System.err.println("BinaryLUT: FileSize invalid!");
                 return false;
             }
             
-            fileName_ = fileName;
+            _fileName = fileName;
             
             /*final int size = (int)(dataSize / 8);
             templates_ = new double[size];
@@ -153,54 +145,100 @@ public class BinaryLUT implements LUT {
         return false;
     }
     
+    /** 
+     * Get the fileName from the header check
+     * @return file name
+     */
+    public String getFileName() {
+        return _fileName;
+    }
+    
+    /**
+     * Returns the number of unique templates in the lookup table
+     * @return number of unique templates
+     */
+    public int getNumberOfIndices() {
+        return _countIndices;
+    }
+    
+    /**
+     * @return pointer to the generated lookup table array 
+     */
     @Override
     public double[] getLookUpTableArray() {
-        return templates_;
+        return _templates;
     }
 
+    /**
+     * @return get minimum lateral position within the template in pixels
+     */
     @Override
     public double getMinLat() {
-        return minLat_;
+        return _minLat;
     }
 
+    /**
+     * @return get maximum lateral position within the template in pixels
+     */
     @Override
     public double getMaxLat() {
-        return maxLat_;
+        return _maxLat;
     }
 
+    /**
+     * @return get minimum axial position in nm
+     */
     @Override
     public double getMinAx() {
-        return minAx_;
+        return _minAx;
     }
 
+    /**
+     * @return get maximum axial position in nm
+     */
     @Override
     public double getMaxAx() {
-        return maxAx_;
+        return _maxAx;
     }
 
+    /**
+     * @return get window size of the templates in pixels
+     */
     @Override
     public int getWindowSize() {
-        return winSize_;
+        return _winSize;
     }
 
+    /**
+     * @return get the lateral step size in pixels
+     */
     @Override
     public double getDeltaLat() {
-        return dLat_;
+        return _dLat;
     }
 
+    /**
+     * @return get the axial step size in nm
+     */
     @Override
     public double getDeltaAx() {
-        return dAx_;
+        return _dAx;
     }
 
+    /**
+     * @return get the lateral range within the template in pixels
+     */
     @Override
     public double getLateralRange() {
-        return maxLat_ - minLat_ - 1.0;
+        return _maxLat - _minLat - 1.0;
     }
 
+    /**
+     * @return get the axial range in nm
+     */
     @Override
     public double getAxialRange() {
-        return maxAx_ - minAx_;
+        return _maxAx - _minAx;
     }
     
 }

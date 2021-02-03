@@ -34,6 +34,7 @@ import ij.io.FileSaver;
 import ij.process.ColorProcessor;
 
 /**
+ * Rendering thread for LookUpSTORM that handles the image data for rendering
  * @author Fabian Hauser
  */
 public class RenderThread extends Thread {
@@ -42,6 +43,10 @@ public class RenderThread extends Thread {
     private boolean _running;
     private boolean _rendering;
     
+    /** 
+     * Constructor
+     * @param lookup LookUpSTORM object
+     */
     public RenderThread(LookUpSTORM lookup) {
         _lookUp = lookup;
         _imagePlus = null;
@@ -49,6 +54,11 @@ public class RenderThread extends Thread {
         _rendering = false;
     }
     
+    /** 
+     * Set the rendering image size 
+     * @param width
+     * @param height 
+     */
     public void setSize(int width, int height) {
         _lookUp.releaseRenderImage();
         ColorProcessor image = new ColorProcessor(width, height);
@@ -57,10 +67,25 @@ public class RenderThread extends Thread {
                              width, height);
     }
     
+    /** 
+     * Set the ImagePlus window title to the image name
+     * @param imageName image name
+     */
+    public void setImageName(String imageName) {
+        _imagePlus.setTitle("LookUpSTORM Rendering - " + imageName);
+    }
+    
+    /**
+     * Save the current rendering as PNG
+     * @param fileName output filename
+     */
     public void save(String fileName) {
         new FileSaver(_imagePlus).saveAsPng(fileName);
     }
     
+    /**
+     * Starts the rendering, if the thread is not running it is started
+     */
     public void startRendering() {
         _imagePlus.show();
         _rendering = true;
@@ -68,23 +93,39 @@ public class RenderThread extends Thread {
             start();
     }
     
+    /**
+     * Stops the rendering but does not stop the thread
+     */
     public void stopRendering() {
         _rendering = false;
     }
     
+    /**
+     * Stops the thread, waits for thread termination and releases the rendered
+     * image
+     */
     public void release() {
         _running = false;
-        try {
-            join();
-            _lookUp.releaseRenderImage();
-        } catch (InterruptedException ex) {
+        while(isAlive()) {
+            try {
+                join();
+            } catch (InterruptedException ex) {
+            }
         }
+        _lookUp.releaseRenderImage();
+        _imagePlus.close();
     }
     
+    /**
+     * Show the current rendered image
+     */
     public void show() {
         _imagePlus.show();
     }
     
+    /**
+     * Internal thread loop
+     */
     @Override
     public void run()
     {

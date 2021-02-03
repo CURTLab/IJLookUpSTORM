@@ -69,6 +69,14 @@ public class LookUpSTORM {
     public native int getRenderImageWidth();
     public native int getRenderImageHeight();
     
+    public static long calculateBytesForLUT(int windowSize, double dLat, 
+            double dAx, double rangeLat, double rangeAx) 
+    {
+        final long countLat = (long)Math.floor(((rangeLat + 1.0) / dLat) + 1);
+        final long countAx = (long)Math.floor(((rangeAx / dAx) + 1));
+        return countLat * countLat * countAx * windowSize * windowSize * 4 * 8;
+    }
+    
     public boolean feedImage(ij.process.ImageProcessor ip, int frame) {
         return feedImageData((short [])ip.getPixels(), frame);
     }

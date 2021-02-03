@@ -27,6 +27,14 @@
  *
  ****************************************************************************/
 
+/*
+ * Orignal code from:
+ *   Akira Goto (goto@w3bio.phys.tohoku.ac.jp)
+ *   Holger Doerr (holger.doerr@gmx.de) 
+ * Modified for our SPE fromat with meta information in the comments
+ * Link: https://imagej.nih.gov/ij/plugins/spe.html
+ */
+
 package at.fhlinz.imagej;
 
 import ij.IJ;
@@ -44,10 +52,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 /**
- *
  * @author Fabian Hauser
  */
-public class SpeFile implements PlugIn {
+public class SpeFile_ implements PlugIn {
     @Override
     public void run(String arg) {
         if (arg.equals("open")) {

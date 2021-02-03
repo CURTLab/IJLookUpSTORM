@@ -32,175 +32,199 @@ package at.fhlinz.imagej;
 import ij.IJ;
 
 /**
- * 
+ * LUT implementation that generate 2D elliptical Gaussian functions templates
+ * from a calibration
  * @author Fabian Hauser
  */
 public class AstigmatismLUT implements LUT {
-    private final Calibration cali_;
-    private double dLat_;
-    private double dAx_;
-    private double minLat_;
-    private double maxLat_;
-    private double minAx_;
-    private double maxAx_;
-    private int winSize_;
-    private int countLat_;
-    private int countAx_;
-    private int countIndex_;
-    private int pixels_;
-    private double[] templates_;
+    private final Calibration _cali;
+    private double _dLat;
+    private double _dAx;
+    private double _minLat;
+    private double _maxLat;
+    private double _minAx;
+    private double _maxAx;
+    private int _winSize;
+    private int _countLat;
+    private int _countAx;
+    private int _countIndex;
+    private int _pixels;
+    private double[] _templates;
     
     public AstigmatismLUT(Calibration cali) 
     {
-        cali_ = cali;
+        _cali = cali;
     }
     
-    private class Generator extends Thread {
-        private final AstigmatismLUT d;
-        
-        Generator(AstigmatismLUT lut) {
-            d = lut;
-        }
-        
-        @Override
-        public void run() {
-            final double sina = Math.sin(d.cali_.getTheta());
-            final double cosa = Math.cos(d.cali_.getTheta());
-        
-            for (int i = 0; i < d.countIndex_; i++) {
-                final int zidx = i % d.countAx_;
-                final int yidx = (i / d.countAx_) % d.countLat_;
-                final int xidx = i / (d.countAx_ * d.countLat_);
-
-                final double x0 = d.getMinLat() + xidx * d.getDeltaLat();
-                final double y0 = d.getMinLat() + yidx * d.getDeltaLat();
-                final double z0 = d.getMinAx() + zidx * d.getDeltaAx();
-
-                final int windowSize = d.getWindowSize();
-                
-                double[] sigma = d.cali_.valDer(z0 + d.cali_.getFocusPlane());
-                int idx = 0;
-                for (int py = 0; py < windowSize; py++) {
-                    final double y = (py - y0);
-                    for (int px = 0; px < windowSize; px++, idx += 4) {
-                        final double x = (px - x0);
-
-                        final double tx = x*cosa  + y*sina, tx2 = tx*tx;
-                        final double ty = -x*sina + y*cosa, ty2 = ty*ty;
-                        final double sx2 = sigma[0]*sigma[0], sx3 = sx2 * sigma[0];
-                        final double sy2 = sigma[1]*sigma[1], sy3 = sy2 * sigma[1];
-                        final double e = Math.exp(-0.5*tx2/sx2 - 0.5*ty2/sy2);
-                        
-                        final int offset = pixels_ * 4 * i;
-                        
-                        d.templates_[offset + idx + 0] = e;
-                        d.templates_[offset + idx + 1] = (tx*cosa/sx2 - ty*sina/sy2)*e;
-                        d.templates_[offset + idx + 2] = (tx*sina/sx2 + ty*cosa/sy2)*e;
-                        d.templates_[offset + idx + 3] = (tx2*sigma[2]/sx3 + ty2*sigma[3]/sy3)*e;
-                    }
-                }
-                IJ.showProgress(i, d.countIndex_);
-            }
-        }
-    }
-    
+    /** 
+     * Populate the templates with 2D elliptical Gaussian functions that 
+     * approximate the PSF
+     * @param windowSize template window size
+     * @param dLat lateral steps in pixels
+     * @param dAx axial steps in nm
+     * @param rangeLat lateral range in both direction around the center in pixels
+     * @param rangeAx axial range in nm around the focus
+     * @return 
+     */
     public boolean populate(int windowSize, double dLat, double dAx, double rangeLat, double rangeAx)
     {
         final double borderLat = Math.floor((windowSize - rangeLat) / 2);
 	if (borderLat < 1.0)
             return false;
         
-        winSize_ = windowSize;
+        _winSize = windowSize;
         
-	minAx_ = -rangeAx * 0.5;
-	maxAx_ = rangeAx * 0.5;
+	_minAx = -rangeAx * 0.5;
+	_maxAx = rangeAx * 0.5;
         
-        dLat_ = dLat;
-        dAx_ = dAx;
+        _dLat = dLat;
+        _dAx = dAx;
         
-	minLat_ = borderLat;
-	maxLat_ = windowSize - borderLat;
+	_minLat = borderLat;
+	_maxLat = windowSize - borderLat;
         
-        countLat_ = (int)Math.floor((((getMaxLat() - getMinLat()) / dLat) + 1));
-        countAx_ = (int)Math.floor(((rangeAx / dAx) + 1));
+        _countLat = (int)Math.floor((((getMaxLat() - getMinLat()) / dLat) + 1));
+        _countAx = (int)Math.floor(((rangeAx / dAx) + 1));
         
-        countIndex_ = countLat_ * countLat_ * countAx_;
-        pixels_ = windowSize*windowSize;
+        _countIndex = _countLat * _countLat * _countAx;
+        _pixels = windowSize*windowSize;
         
         // reset and force garbage collection
-        templates_ = null;
+        _templates = null;
         System.gc();
         
         // allocate new array for tempaltes
-        final int size = countIndex_ * pixels_ * 4;
+        final int size = _countIndex * _pixels * 4;
         try {
-            templates_ = new double[size];
+            _templates = new double[size];
         }catch (OutOfMemoryError ex) {
             return false;
         }
-        if (templates_ == null) {
+        if (_templates == null) {
             return false;
         }
 	
-        // start generator thread
-        Generator gen = new Generator(this);
-        gen.start();
-        try {
-            gen.join();
-            System.out.println("Done!");
-            return true;
-        } catch (InterruptedException ex) {
-            return false;
+        // possible angle of elliptical Gaussian function
+        final double sina = Math.sin(_cali.getTheta());
+        final double cosa = Math.cos(_cali.getTheta());
+
+        // start generation
+        for (int i = 0; i < _countIndex; i++) {
+            final int zidx = i % _countAx;
+            final int yidx = (i / _countAx) % _countLat;
+            final int xidx = i / (_countAx * _countLat);
+
+            final double x0 = _minLat + xidx * _dLat;
+            final double y0 = _minLat + yidx * _dLat;
+            final double z0 = _minAx + zidx * _dAx;
+
+            // elliptical Gaussian sigma and derevatives
+            final double[] sigma = _cali.valDer(z0 + _cali.getFocusPlane());
+            final double sx = sigma[0], sy = sigma[1];
+            final double sx2 = sx * sx, sx3 = sx2 * sx;
+            final double sy2 = sy * sy, sy3 = sy2 * sy;
+            final double dsx = sigma[2], dsy = sigma[3];
+            
+            int idx = 0;
+            for (int py = 0; py < windowSize; py++) {
+                final double y = (py - y0);
+                for (int px = 0; px < windowSize; px++, idx += 4) {
+                    final double x = (px - x0);
+
+                    final double tx = x*cosa  + y*sina, tx2 = tx*tx;
+                    final double ty = -x*sina + y*cosa, ty2 = ty*ty;
+                    final double e = Math.exp(-0.5*tx2/sx2 - 0.5*ty2/sy2);
+
+                    final int offset = _pixels * 4 * i;
+
+                    _templates[offset + idx + 0] = e;
+                    _templates[offset + idx + 1] = (tx*cosa/sx2 - ty*sina/sy2)*e;
+                    _templates[offset + idx + 2] = (tx*sina/sx2 + ty*cosa/sy2)*e;
+                    _templates[offset + idx + 3] = (tx2*dsx/sx3 + ty2*dsy/sy3)*e;
+                }
+            }
+            IJ.showProgress(i, _countIndex);
         }
+        return true;
     }
 
+    /**
+     * @return pointer to the generated lookup table array 
+     */
     @Override
     public double[] getLookUpTableArray() {
-        return templates_;
+        return _templates;
     }
 
+    /**
+     * @return get minimum lateral position within the template in pixels
+     */
     @Override
     public double getMinLat() {
-        return minLat_;
+        return _minLat;
     }
 
+    /**
+     * @return get maximum lateral position within the template in pixels
+     */
     @Override
     public double getMaxLat() {
-        return maxLat_;
+        return _maxLat;
     }
 
+    /**
+     * @return get minimum axial position in nm
+     */
     @Override
     public double getMinAx() {
-        return minAx_;
+        return _minAx;
     }
 
+    /**
+     * @return get maximum axial position in nm
+     */
     @Override
     public double getMaxAx() {
-        return maxAx_;
+        return _maxAx;
     }
 
+    /**
+     * @return get window size of the templates in pixels
+     */
     @Override
     public int getWindowSize() {
-        return winSize_;
+        return _winSize;
     }
 
+    /**
+     * @return get the lateral step size in pixels
+     */
     @Override
     public double getDeltaLat() {
-        return dLat_;
+        return _dLat;
     }
 
+    /**
+     * @return get the axial step size in nm
+     */
     @Override
     public double getDeltaAx() {
-        return dAx_;
+        return _dAx;
     }
 
+    /**
+     * @return get the lateral range within the template in pixels
+     */
     @Override
     public double getLateralRange() {
-        return maxLat_ - minLat_ - 1.0;
+        return _maxLat - _minLat - 1.0;
     }
 
+    /**
+     * @return get the axial range in nm
+     */
     @Override
     public double getAxialRange() {
-        return maxAx_ - minAx_;
+        return _maxAx - _minAx;
     }
 }

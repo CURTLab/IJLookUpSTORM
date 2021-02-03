@@ -31,102 +31,25 @@ package at.fhlinz.imagej;
 
 import ij.IJ;
 import ij.ImageJ;
-import ij.ImagePlus;
-import ij.ImageStack;
-import ij.gui.GenericDialog;
-import ij.plugin.filter.PlugInFilter;
-import ij.process.ImageProcessor;
+import ij.plugin.PlugIn;
 
-public class LookUpSTORM_ implements PlugInFilter {
-    private LookUpSTORM _lookUpSTORM;
-    private ImagePlus _imagePlus;
-    private RenderThread _renderThread;
-
-    @Override
-    public int setup(String string, ImagePlus ip) {
-        _lookUpSTORM = new LookUpSTORM();
-        _renderThread = new RenderThread(_lookUpSTORM);
-        _imagePlus = ip;
-        return DOES_16;
-    }
+public class LookUpSTORM_ implements PlugIn {
+    private final LookUpSTORM _lookUpSTORM;
+    private final LookUpSTORMFrame _frame;
     
-    @Override
-    public void run(ImageProcessor ip) {
-        ImageStack stack = _imagePlus.getStack();
+    public LookUpSTORM_() {
+        _lookUpSTORM = new LookUpSTORM();
+        //_lookUpSTORM.setVerbose(true);
         
-        if (stack.getBitDepth() != 16) {
-            IJ.showMessage("LookUpSTORM error", "Image type is not 16 bit grayscale!");
-            return;
-        }
-        
-        //String path = "C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/Platelets/";
-        String path = "C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/Sim/";
-        Calibration cali = new Calibration();
-        //cali.load(path + "Calib_f700_c500_closeToFar_red_002.yaml");
-        cali.load(path + "sequence-as-stack-Beads-AS-Exp.yaml");
-        cali.plot();
-       
-        AstigmatismLUT lut = new AstigmatismLUT(cali);
-        if (!lut.populate(9, 0.1, 25.0, 4.0, 1000.0)) {
-            IJ.showMessage("LookUpSTORM error", "Could not populate LUT!");
-            return;
-        }
-        _lookUpSTORM.setLUT(lut);
-        
-        _lookUpSTORM.setImagePara(ip.getWidth(), ip.getHeight());
-        _lookUpSTORM.setVerbose(true);
-        
-        /*final int threshold = (int)spinnerThreshold_.getValue();
-        final int maxIter = (int)spinnerMaxIter_.getValue();
-        final int scale = (int)spinnerScale_.getValue();
-        final double eps = (double)spinnerEps_.getValue();
-        _lookUpSTORM.setThreshold(threshold);
-        _lookUpSTORM.setEpsilon(eps);
-        _lookUpSTORM.setMaxIter(maxIter);**/
-        final int scale = 10;
-        _lookUpSTORM.setThreshold(5);
-        _renderThread.setSize(stack.getWidth() * scale, stack.getHeight() * scale);
-        
-        _renderThread.startRendering();
-        Runnable fitter = () -> {
-            //startAnalysisGUI();
-            //startButton_.setEnabled(false);
-            final int frames = stack.getSize();
-            final long t0 = System.nanoTime();
-            _lookUpSTORM.reset();
-            for (int frame = 0; frame < frames; frame++) {
-                ImageProcessor img = stack.getProcessor(frame + 1);
-                if (!_lookUpSTORM.feedImage(img, frame)) 
-                    continue;
-                _lookUpSTORM.waitForLocFinished(1, 100);
-                IJ.showProgress(frame, frames);
-            }
-            _renderThread.stopRendering();
-            final long t1 = System.nanoTime();
-            //stopAnalysisGUI();
-            //startButton_.setEnabled(true);
-            System.out.println("Found " + _lookUpSTORM.numberOfAllLocs() + " emitters in " + (t1 - t0) / 1E9 + " s!");
-            IJ.showStatus("Found " + _lookUpSTORM.numberOfAllLocs() + " emitters in " + (t1 - t0) / 1E9 + " s!");
-        };
-        (new Thread(fitter)).start();
+        _frame = new LookUpSTORMFrame(_lookUpSTORM);
     }
 
-    private boolean showDialog() {
-        GenericDialog gd = new GenericDialog("Process pixels");
-
-        // default value is 0.00, 2 digits right of the decimal point
-        gd.addNumericField("value", 0.00, 2);
-        gd.addStringField("name", "John");
-
-        gd.showDialog();
-        if (gd.wasCanceled())
-            return false;
-
-        // get entered values
-        //value = gd.getNextNumber();
-        //name = gd.getNextString();
-
-        return true;
+    @Override
+    public void run(String arg) {
+        if ((arg != null) && (arg.length() > 0)) {
+            _frame.setFileName(arg);
+        }
+        _frame.setVisible(true);
     }
     
    /**
@@ -136,6 +59,7 @@ public class LookUpSTORM_ implements PlugInFilter {
     * an image and calls the plugin, e.g. after setting breakpoints.
     *
     * @param args unused
+     * @throws java.lang.Exception
     */
    public static void main(String[] args) throws Exception {
        // set the plugins.dir property to make the plugin appear in the Plugins menu
@@ -149,24 +73,13 @@ public class LookUpSTORM_ implements PlugInFilter {
        new ImageJ();
        
        String path = "C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/Sim/";
-       //ij.ImagePlus image = SpeFile.open(path, "NewPlatelets_c500_f700_50mM_TestRT_red_015.SPE");
-       ij.ImagePlus image = SpeFile.open(path, "sunburst2.SPE");
-        //ij.ImagePlus image = SpeFile.open(path, "cross.SPE");
+       String cali = "sequence-as-stack-Beads-AS-Exp.yaml";
+       String img = "sunburst2.SPE";
+       //ij.ImagePlus image = SpeFile_.open(path, "NewPlatelets_c500_f700_50mM_TestRT_red_015.SPE");
+       ij.ImagePlus image = SpeFile_.open(path, img);
+        //ij.ImagePlus image = SpeFile_.open(path, "cross.SPE");
        image.show();
        
-       IJ.runPlugIn(clazz.getName(), "");
-       
-       /*LUT lut = new LUT(cali);
-       lut.populate(9, 0.1, 25.0, 4.0, 1000.0);
-
-       //*/
-
-
-       // open the Clown sample
-       //ImagePlus image = IJ.openImage("http://imagej.net/images/clown.jpg");
-       //image.show();
-
-       // run the plugin
-       //IJ.runPlugIn(clazz.getName(), "");
+       IJ.runPlugIn(clazz.getName(), path + cali);
    }
 }
