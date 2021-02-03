@@ -8,21 +8,21 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>26.0.0</version>
+		<version>14.0.0</version>
 		<relativePath />
 	</parent>
 
-	<groupId>com.mycompany</groupId>
-	<artifactId>Process_Pixels</artifactId>
+	<groupId>at.fhlinz</groupId>
+	<artifactId>LookUpSTORM_</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
 
-	<name>Process Pixels</name>
+	<name>LookUpSTORM</name>
 	<description>A Maven project implementing an ImageJ 1.x plugin.</description>
-	<url>http://mycompany.com/imagej/process-pixels/</url>
-	<inceptionYear>2012</inceptionYear>
+	<url>https://github.com/CURTLab/IJLookUpSTORM</url>
+	<inceptionYear>2021</inceptionYear>
 	<organization>
-		<name>My Company</name>
-		<url>http://mycompany.com/</url>
+		<name>University of Applied Sciences Upper Austria, Linz, Austra</name>
+		<url>https://www.fh-ooe.at/campus-linz/</url>
 	</organization>
 	<licenses>
 		<license>
@@ -33,9 +33,8 @@
 
 	<developers>
 		<developer>
-			<id>ctrueden</id>
-			<name>Curtis Rueden</name>
-			<url>https://imagej.net/User:Rueden</url>
+			<id>fh</id>
+			<name>Fabian Hauser</name>
 			<roles>
 				<role>lead</role>
 				<role>developer</role>
@@ -47,35 +46,10 @@
 		</developer>
 	</developers>
 	<contributors>
-		<contributor>
-			<name>Johannes Schindelin</name>
-			<url>https://imagej.net/User:Schindelin</url>
-			<roles><role>founder</role></roles>
-			<properties><id>dscho</id></properties>
-		</contributor>
-		<contributor>
-			<name>Olivier Burri</name>
-			<url>https://imagej.net/User:Oburri</url>
-			<properties><id>lacan</id></properties>
-		</contributor>
-		<contributor>
-			<name>Mark Hiner</name>
-			<url>https://imagej.net/User:Hinerm</url>
-			<properties><id>hinerm</id></properties>
-		</contributor>
-		<contributor>
-			<name>Jules Maselbas</name>
-		</contributor>
-		<contributor>
-			<name>Kota Miura</name>
-			<url>https://imagej.net/User:Miura</url>
-			<properties><id>miura</id></properties>
-		</contributor>
-		<contributor>
-			<name>Yili Zhao</name>
-			<url>https://imagej.net/User:Panovr</url>
-			<properties><id>panovr</id></properties>
-		</contributor>
+            <contributor>
+                    <name>Jaroslaw Jacak</name>
+                    <properties><id>jj</id></properties>
+            </contributor>
 	</contributors>
 
 	<mailingLists>
@@ -86,24 +60,24 @@
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:git://github.com/imagej/example-legacy-plugin</connection>
-		<developerConnection>scm:git:git@github.com:imagej/example-legacy-plugin</developerConnection>
+		<connection>scm:git:git://github.com/CURTLab/IJLookUpSTORM</connection>
+		<developerConnection>scm:git:git@github.com:CURTLab/IJLookUpSTORM</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/imagej/example-legacy-plugin</url>
+		<url>https://github.com/CURTLab/IJLookUpSTORM</url>
 	</scm>
 	<issueManagement>
 		<system>GitHub Issues</system>
-		<url>https://github.com/imagej/example-legacy-plugin/issues</url>
+		<url>https://github.com/CURTLab/IJLookUpSTORM/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>None</system>
 	</ciManagement>
 
 	<properties>
-		<package-name>com.mycompany.imagej</package-name>
-		<main-class>com.mycompany.imagej.Process_Pixels</main-class>
+		<package-name>at.fhlinz.imagej</package-name>
+		<main-class>at.fhlinz.imagej.LookUpSTORM_</main-class>
 		<license.licenseName>bsd_2</license.licenseName>
-		<license.copyrightOwners>My Company, Inc.</license.copyrightOwners>
+		<license.copyrightOwners>University of Applied Sciences Upper Austria, Linz, Austra</license.copyrightOwners>
 	</properties>
 
 	<dependencies>
@@ -111,5 +85,13 @@
 			<groupId>net.imagej</groupId>
 			<artifactId>ij</artifactId>
 		</dependency>
+                <dependency>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-math3</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.jfree</groupId>
+                    <artifactId>jfreechart</artifactId>
+                </dependency>
 	</dependencies>
 </project>
