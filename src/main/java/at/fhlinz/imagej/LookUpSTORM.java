@@ -2,10 +2,10 @@
  *
  * MIT License
  *
- * Copyright (C) 2020 Fabian Hauser
+ * Copyright (C) 2021 Fabian Hauser
  *
  * Author: Fabian Hauser <fabian.hauser@fh-linz.at>
- * University of Applied Sciences Upper Austria - Linz - Austra
+ * University of Applied Sciences Upper Austria - Linz - Austria
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,13 +37,14 @@ public class LookUpSTORM {
         System.loadLibrary("LookUpSTORM_CPPDLL");
     }
     
-    public native boolean setLocPara(double[][] lookupTable, int windowSize, double dLat, double dAx, double rangeLat, double rangeAx);
-    public native boolean setLocParaArray(double[] lookupTable, int windowSize, double dLat, double dAx, double rangeLat, double rangeAx);
-    public native boolean setLUT(String fileName);
+    public native boolean setLookUpTable(double[] lookupTable, int windowSize, double dLat, double dAx, double rangeLat, double rangeAx);
+    public native boolean setLookUpTable(String fileName);
+    public native boolean releaseLookUpTable();
+    
     public native void setEpsilon(double eps);
     public native void setMaxIter(int maxIter);
-    public native boolean isLocFinish();
     public native void setThreshold(int threshold);
+    
     public native double[][] getLocs();
     public native int numberOfDetectedLocs();
     public native double[][] getAllLocs();
@@ -52,7 +53,8 @@ public class LookUpSTORM {
     public native void setImagePara(int imageWidth, int imageHeight);
     public native int getImageWidth();
     public native int getImageHeight();
-    private native boolean feedImageData(short data[], int frame);
+    public native boolean feedImageData(short data[], int frame);
+    public native boolean isLocFinish();
     
     public native boolean isReady();
     public native void release();
@@ -66,9 +68,6 @@ public class LookUpSTORM {
     public native void clearRenderingReady();
     public native int getRenderImageWidth();
     public native int getRenderImageHeight();
-    public native float[] getRawRenderImage();
-    
-    public native int[] renderSMLMImage(int w, int h, double[][] xyz, int idxX, int idxY, int idxZ);
     
     public boolean feedImage(ij.process.ImageProcessor ip, int frame) {
         return feedImageData((short [])ip.getPixels(), frame);
@@ -91,8 +90,8 @@ public class LookUpSTORM {
     }
     
     public boolean setLUT(LUT lut) {
-        return setLocParaArray(lut.getLookUpTableArray(), lut.getWindowSize(), 
-                               lut.getDeltaLat(), lut.getDeltaAx(), 
-                               lut.getLateralRange(), lut.getAxialRange());
+        return setLookUpTable(lut.getLookUpTableArray(), lut.getWindowSize(), 
+                              lut.getDeltaLat(), lut.getDeltaAx(), 
+                              lut.getLateralRange(), lut.getAxialRange());
     }
 }

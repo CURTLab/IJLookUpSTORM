@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="ColorMap.cpp" />
+    <ClCompile Include="Fitter.cpp" />
+    <ClCompile Include="Image.cpp" />
+    <ClCompile Include="LinearMath.cpp" />
+    <ClCompile Include="LocalMaximumSearch.cpp" />
+    <ClCompile Include="LookUpSTORM.cpp" />
+    <ClCompile Include="LookUpSTORM_CPPDLL.cpp" />
+    <ClCompile Include="Matrix.cpp" />
+    <ClCompile Include="Rect.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Vector.cpp" />
+    <ClCompile Include="atlas\ATL_drefsyrk.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_drefsyrkLN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_drefsyrkLT.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_drefsyrkUN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_drefsyrkUT.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_dreftrsv.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_dreftrsvLNN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_dreftrsvLNU.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_dreftrsvLTN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_dreftrsvLTU.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_dreftrsvUNN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_dreftrsvUNU.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_dreftrsvUTN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="atlas\ATL_dreftrsvUTU.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ColorMap.h" />
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="Fitter.h" />
+    <ClInclude Include="Image.h" />
+    <ClInclude Include="LinearMath.h" />
+    <ClInclude Include="LocalMaximumSearch.h" />
+    <ClInclude Include="LookUpSTORM.h" />
+    <ClInclude Include="LookUpSTORM_CPPDLL.h" />
+    <ClInclude Include="Matrix.h" />
+    <ClInclude Include="Rect.h" />
+    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Vector.h" />
+    <ClInclude Include="atlas\atlas_enum.h">
+      <Filter>ATLAS</Filter>
+    </ClInclude>
+    <ClInclude Include="atlas\atlas_refalias1.h">
+      <Filter>ATLAS</Filter>
+    </ClInclude>
+    <ClInclude Include="atlas\atlas_refalias2.h">
+      <Filter>ATLAS</Filter>
+    </ClInclude>
+    <ClInclude Include="atlas\atlas_refalias3.h">
+      <Filter>ATLAS</Filter>
+    </ClInclude>
+    <ClInclude Include="atlas\atlas_reflevel1.h">
+      <Filter>ATLAS</Filter>
+    </ClInclude>
+    <ClInclude Include="atlas\atlas_reflevel2.h">
+      <Filter>ATLAS</Filter>
+    </ClInclude>
+    <ClInclude Include="atlas\atlas_reflevel3.h">
+      <Filter>ATLAS</Filter>
+    </ClInclude>
+    <ClInclude Include="atlas\atlas_reflvl2.h">
+      <Filter>ATLAS</Filter>
+    </ClInclude>
+    <ClInclude Include="atlas\atlas_reflvl3.h">
+      <Filter>ATLAS</Filter>
+    </ClInclude>
+    <ClInclude Include="atlas\atlas_refmisc.h">
+      <Filter>ATLAS</Filter>
+    </ClInclude>
+    <ClInclude Include="atlas\cblas.h">
+      <Filter>ATLAS</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="ATLAS">
+      <UniqueIdentifier>{d8cae38e-7698-4c94-a2cf-d6fd212c83aa}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

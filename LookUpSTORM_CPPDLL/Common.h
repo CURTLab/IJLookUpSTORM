@@ -6,17 +6,17 @@
  *
  * Author: Fabian Hauser <fabian.hauser@fh-linz.at>
  * University of Applied Sciences Upper Austria - Linz - Austria
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,60 +27,29 @@
  *
  ****************************************************************************/
 
-package at.fhlinz.imagej;
+#ifndef COMMON_H
+#define COMMON_H
 
-/**
- * Interface for lookup tables used by the fitting algorithm
- * @author Fabian Hauser
- */
-public interface LUT {
-    /**
-     * @return pointer to the generated lookup table array 
-     */
-    public double[] getLookUpTableArray();
-    
-    /**
-     * @return get minimum lateral position within the template in pixels
-     */
-    public double getMinLat();
+#include <iostream>
+#include <cmath>
+#include <algorithm>
 
-    /**
-     * @return get maximum lateral position within the template in pixels
-     */
-    public double getMaxLat();
+#undef min
+#undef max
 
-    /**
-     * @return get minimum axial position in nm
-     */
-    public double getMinAx();
+template<typename T>
+static inline T constexpr sqr(const T& x) { return x * x; }
 
-    /**
-     * @return get maximum axial position in nm
-     */
-    public double getMaxAx();
+template <class T>
+static inline T constexpr bound(const T& v, const T& lo, const T& hi) { return (v < lo ? lo : (v > hi ? hi: v)); }
 
-    /**
-     * @return get window size of the templates in pixels
-     */
-    public int getWindowSize();
+static inline bool cmp(double v1, double v2) { return std::abs(v1 - v2) * 1E12 <= std::min(std::abs(v1), std::abs(v2)); }
 
-    /**
-     * @return get the lateral step size in pixels
-     */
-    public double getDeltaLat();
+static constexpr uint32_t BLACK = 0xff000000;
 
-    /**
-     * @return get the axial step size in nm
-     */
-    public double getDeltaAx();
-    
-    /**
-     * @return get the lateral range within the template in pixels
-     */
-    public double getLateralRange();
-    
-    /**
-     * @return get the axial range in nm
-     */
-    public double getAxialRange();
-}
+enum class Initialization {
+    Uninitialized
+};
+static constexpr Initialization Uninitialized = Initialization::Uninitialized;
+
+#endif // !COMMON_H

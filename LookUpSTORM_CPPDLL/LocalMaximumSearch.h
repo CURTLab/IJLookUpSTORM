@@ -6,17 +6,17 @@
  *
  * Author: Fabian Hauser <fabian.hauser@fh-linz.at>
  * University of Applied Sciences Upper Austria - Linz - Austria
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,60 +27,35 @@
  *
  ****************************************************************************/
 
-package at.fhlinz.imagej;
+#ifndef LOCALMAXIMUMSEARCH_H
+#define LOCALMAXIMUMSEARCH_H
 
-/**
- * Interface for lookup tables used by the fitting algorithm
- * @author Fabian Hauser
- */
-public interface LUT {
-    /**
-     * @return pointer to the generated lookup table array 
-     */
-    public double[] getLookUpTableArray();
-    
-    /**
-     * @return get minimum lateral position within the template in pixels
-     */
-    public double getMinLat();
+#include <list>
+#include "Image.h"
 
-    /**
-     * @return get maximum lateral position within the template in pixels
-     */
-    public double getMaxLat();
+struct LocalMaximum {
+	uint16_t val;
+	uint16_t localBg;
+	int x;
+	int y;
+};
 
-    /**
-     * @return get minimum axial position in nm
-     */
-    public double getMinAx();
+class LocalMaximumSearch
+{
+public:
+	LocalMaximumSearch(int border, int radius);
+	std::list<LocalMaximum> find(ImageU16 image, uint16_t threshold);
 
-    /**
-     * @return get maximum axial position in nm
-     */
-    public double getMaxAx();
+	int border() const;
+	void setBorder(int border);
 
-    /**
-     * @return get window size of the templates in pixels
-     */
-    public int getWindowSize();
+	int radius() const;
+	void setRadius(int radius);
 
-    /**
-     * @return get the lateral step size in pixels
-     */
-    public double getDeltaLat();
+private:
+	int m_border;
+	int m_radius;
 
-    /**
-     * @return get the axial step size in nm
-     */
-    public double getDeltaAx();
-    
-    /**
-     * @return get the lateral range within the template in pixels
-     */
-    public double getLateralRange();
-    
-    /**
-     * @return get the axial range in nm
-     */
-    public double getAxialRange();
-}
+};
+
+#endif // !LOCALMAXIMUMSEARCH_H

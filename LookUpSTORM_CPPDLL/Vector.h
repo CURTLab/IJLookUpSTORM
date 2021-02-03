@@ -6,17 +6,17 @@
  *
  * Author: Fabian Hauser <fabian.hauser@fh-linz.at>
  * University of Applied Sciences Upper Austria - Linz - Austria
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,60 +27,60 @@
  *
  ****************************************************************************/
 
-package at.fhlinz.imagej;
+#ifndef VECTOR_H
+#define VECTOR_H
 
-/**
- * Interface for lookup tables used by the fitting algorithm
- * @author Fabian Hauser
+#include "Common.h"
+
+class VectorData;
+
+/*
+ * vector class with copy-on-write mechanics inspired by the GNU Scientific Library (GSL) interface
  */
-public interface LUT {
-    /**
-     * @return pointer to the generated lookup table array 
-     */
-    public double[] getLookUpTableArray();
-    
-    /**
-     * @return get minimum lateral position within the template in pixels
-     */
-    public double getMinLat();
+class Vector
+{
+public:
+	// create an empty vector with no data at all
+	Vector() noexcept;
+	// create vector with array initialized to 0.0
+	Vector(size_t size) noexcept;
+	// create vector with uninitialized array
+	Vector(size_t size, Initialization init) noexcept;
+	// create vector with array initialized to supplied value
+	Vector(size_t size, double value) noexcept;
 
-    /**
-     * @return get maximum lateral position within the template in pixels
-     */
-    public double getMaxLat();
+	// copy-on-write methods
+	Vector(const Vector& image) noexcept;
+	~Vector() noexcept;
+	Vector& operator=(const Vector& other) noexcept;
 
-    /**
-     * @return get minimum axial position in nm
-     */
-    public double getMinAx();
+	// chech if MatrixData or array is null
+	bool isNull() const noexcept;
+	// check if size1/size2 is zero
+	bool isZero() const noexcept;
 
-    /**
-     * @return get maximum axial position in nm
-     */
-    public double getMaxAx();
+	size_t size() const noexcept;
+	size_t stride() const noexcept;
 
-    /**
-     * @return get window size of the templates in pixels
-     */
-    public int getWindowSize();
+	void fill(double value) noexcept;
+	void setZero() noexcept;
 
-    /**
-     * @return get the lateral step size in pixels
-     */
-    public double getDeltaLat();
+	double sum() const;
 
-    /**
-     * @return get the axial step size in nm
-     */
-    public double getDeltaAx();
-    
-    /**
-     * @return get the lateral range within the template in pixels
-     */
-    public double getLateralRange();
-    
-    /**
-     * @return get the axial range in nm
-     */
-    public double getAxialRange();
-}
+	double* data() noexcept;
+	const double* constData() const noexcept;
+
+	double &operator[](size_t i) noexcept;
+	const double& operator[](size_t i) const noexcept;
+	void operator+=(const Vector& v);
+	void operator-=(const Vector& v);
+
+private:
+	VectorData* d;
+
+};
+
+std::ostream& operator<<(std::ostream&, Vector const&);
+
+#endif // !VECTOR_H
+
