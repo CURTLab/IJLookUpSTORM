@@ -29,46 +29,218 @@
 
 package at.fhlinz.imagej;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import static java.lang.Thread.sleep;
 
 public class LookUpSTORM {
     
+    /** 
+     * Constructor. Loads the CPPDLL
+     */
     public LookUpSTORM() {
         System.loadLibrary("LookUpSTORM_CPPDLL");
     }
     
+    /**
+     * 
+     * @param lookupTable
+     * @param windowSize
+     * @param dLat
+     * @param dAx
+     * @param rangeLat
+     * @param rangeAx
+     * @return 
+     */
     public native boolean setLookUpTable(double[] lookupTable, int windowSize, double dLat, double dAx, double rangeLat, double rangeAx);
+    
+    /** 
+     * 
+     * @param fileName
+     * @return 
+     */
     public native boolean setLookUpTable(String fileName);
+    
+    /** 
+     * 
+     * @return 
+     */
     public native boolean releaseLookUpTable();
     
+    /** 
+     * 
+     * @param eps 
+     */
     public native void setEpsilon(double eps);
+    
+    /** 
+     * 
+     * @param maxIter 
+     */
     public native void setMaxIter(int maxIter);
+    
+    /** 
+     * 
+     * @param threshold 
+     */
     public native void setThreshold(int threshold);
     
+    /** 
+     * Get the detected localizations of the currently fitted frame.
+     * @return Array of localizations as double[7] array 
+     * [bg,peak,x,y,z,frame,time]. x & y is returned as pixels, z in nm and 
+     * time in µs
+     * @see LookUpSTORM#reset()
+     */
     public native double[][] getLocs();
+    
+    /** 
+     * Get the number of detected localizations of the currently fitted frame.
+     * @return Number of of detected localizations.
+     */
     public native int numberOfDetectedLocs();
+    
+    /** 
+     * Get the all detected localizations. This array is reseted by the reset 
+     * method or setLookUpTable method.
+     * @return Array of localizations as double[7] array 
+     * [bg,peak,x,y,z,frame,time]. x & y is returned as pixels, z in nm and 
+     * time in µs
+     * @see LookUpSTORM#reset()
+     */
     public native double[][] getAllLocs();
+    
+    /** 
+     * Get the number of all detected localizations. This number is reseted by 
+     * the reset method or setLookUpTable method.
+     * @return Number of all detected localizations since reset
+     * @see LookUpSTORM#reset()
+     */
     public native int numberOfAllLocs();
     
+    /** 
+     * 
+     * @param imageWidth
+     * @param imageHeight 
+     */
     public native void setImagePara(int imageWidth, int imageHeight);
+    
+    /** 
+     * 
+     * @return 
+     */
     public native int getImageWidth();
+    
+    /** 
+     * 
+     * @return 
+     */
     public native int getImageHeight();
+    
+    /** 
+     * 
+     * @param data
+     * @param frame
+     * @return 
+     */
     public native boolean feedImageData(short data[], int frame);
+    
+    /** 
+     * Flag to indicate when the feeded image is fitted and processed
+     * @return Returns true if the feeded image is fitted and processed
+     * @see LookUpSTORM#feedImage(ij.process.ImageProcessor, int) 
+     * @see LookUpSTORM#feedImageData(short[], int) 
+     */
     public native boolean isLocFinish();
     
+    /**
+     * Checks if all needed parameters are set
+     * @return True if LUT, image parameter and render image are set
+     * @see LookUpSTORM#setLUT(at.fhlinz.imagej.LUT) 
+     * @see LookUpSTORM#setImagePara(int, int) 
+     * @see LookUpSTORM#setRenderImage(int[], int, int) 
+     */
     public native boolean isReady();
+    
+    /** 
+     * Releases all the allocated memory of the CPPDLL
+     */
     public native void release();
+    
+    /** 
+     * Resets the isLocFinish and isRenderingReady flag to false, clears the 
+     * array of detected localizations and fills rendered image with zeros
+     */
     public native void reset();
+    
+    /** 
+     * Enable or disable CPPDLL output on std::cout
+     * @param verbose If true CPPDLL will output information on std::cout
+     */
     public native void setVerbose(boolean verbose);
     
+    /** 
+     * 
+     * @param pixels
+     * @param SMLMimageWidth
+     * @param SMLMimageHeigt
+     * @return 
+     */
     public native boolean setRenderImage(int[] pixels, int SMLMimageWidth, int SMLMimageHeigt);
+    
+    /** 
+     * Release the memory of the set render image
+     * @return Returns false if no memory was in used
+     * @see LookUpSTORM#setRenderImage(int[], int, int) 
+     */
     public native boolean releaseRenderImage();
+    
+    /** 
+     * Set the sigma of the Gaussian rendering in pixels of the render image.
+     * Caution: Only 3x3 pixels are used for Gaussian histogram rendering!
+     * @param sigma Sigma in pixels
+     */
     public native void setRenderSigma(float sigma);
+    
+    /** 
+     * Return true if a the rendered image has changed and needs to be redrawn.
+     * Rendering is automated and happens if enough new localizations are 
+     * detected.
+     * @return Return true if render image needs to be redrawn.
+     * @see LookUpSTORM#feedImage(ij.process.ImageProcessor, int) 
+     * @see LookUpSTORM#feedImageData(short[], int) 
+     */
     public native boolean isRenderingReady();
+    
+    /** 
+     * Sets all pixels of the rendering histogram to zero
+     */
     public native void clearRenderingReady();
+    
+    /** 
+     * 
+     * @return 
+     * @see LookUpSTORM#setRenderImage(int[], int, int) 
+     */
     public native int getRenderImageWidth();
+    
+    /** 
+     * 
+     * @return 
+     * @see LookUpSTORM#setRenderImage(int[], int, int) 
+     */
     public native int getRenderImageHeight();
     
+    /**
+     * Calculate the bytes needed for the LUT template array with the supplied
+     * parameters.
+     * @param windowSize template window size
+     * @param dLat lateral steps in pixels
+     * @param dAx axial steps in nm
+     * @param rangeLat lateral range in both direction around the center in pixels
+     * @param rangeAx axial range in nm around the focus
+     * @return Number of bytes used for LUT array.
+     */
     public static long calculateBytesForLUT(int windowSize, double dLat, 
             double dAx, double rangeLat, double rangeAx) 
     {
@@ -77,10 +249,26 @@ public class LookUpSTORM {
         return countLat * countLat * countAx * windowSize * windowSize * 4 * 8;
     }
     
+    /**
+     * Feed a imagej image to the CPPDLL for fitting
+     * @param ip 16 bit short image
+     * @param frame Index of supplied image (zero starting index)
+     * @return true if image could be processed (size is the same as set)
+     * @see LookUpSTORM#setImagePara(int, int) 
+     * @see LookUpSTORM#feedImageData(short[], int) 
+     */
     public boolean feedImage(ij.process.ImageProcessor ip, int frame) {
         return feedImageData((short [])ip.getPixels(), frame);
     }
     
+    /**
+     * Helper function to wait until feeded image is fitted and processes
+     * @param sleepms loop wait time in ms (default 1 ms)
+     * @param timeoutms timeout in ms to stop the loop
+     * @return Return false if the timeout is triggered
+     * @see LookUpSTORM#feedImage(ij.process.ImageProcessor, int) 
+     * @see LookUpSTORM#feedImageData(short[], int) 
+     */
     public boolean waitForLocFinished(long sleepms, long timeoutms) {
         final long startTime = System.nanoTime();
         while (!isLocFinish()) {
@@ -97,9 +285,56 @@ public class LookUpSTORM {
         return true;
     }
     
+    /**
+     * Helper function to set the LUT
+     * @param lut Java LUT interface
+     * @return Returns true if LUT is valid and could be set
+     */
     public boolean setLUT(LUT lut) {
         return setLookUpTable(lut.getLookUpTableArray(), lut.getWindowSize(), 
                               lut.getDeltaLat(), lut.getDeltaAx(), 
                               lut.getLateralRange(), lut.getAxialRange());
+    }
+    
+    /** 
+     * Save all detected localizations since the last reset to a CSV file.
+     * Header: index,frame,x_nm,y_nm,z_nm,intensity,background,time
+     * @param fileName Output CSV file name.
+     * @param pixelSize Pixels size of the input image in nm
+     * @return 
+     * @see LookUpSTORM#getAllLocs() 
+     */
+    public boolean saveLocsCSV(String fileName, double pixelSize) {
+        double[][] locs = getAllLocs();
+        try {
+            PrintWriter stream = new PrintWriter(fileName);
+            stream.write("index,frame,x_nm,y_nm,z_nm,intensity,background,time\n");
+            int idx = 1;
+            for (double[] l:locs) {
+                // [bg,peak,x,y,z,frame,time]
+                StringBuilder builder = new StringBuilder();
+                builder.append(idx++);
+                builder.append(',');
+                builder.append(l[6] + 1);
+                builder.append(',');
+                builder.append(l[2] * pixelSize);
+                builder.append(',');
+                builder.append(l[3] * pixelSize);
+                builder.append(',');
+                builder.append(l[4]);
+                builder.append(',');
+                builder.append(l[1]);
+                builder.append(',');
+                builder.append(l[0]);
+                builder.append(',');
+                builder.append(l[6]);
+                builder.append('\n');
+                stream.write(builder.toString());
+            }
+            stream.close();
+            return true;
+        } catch (FileNotFoundException ex) {
+            return false;
+        }
     }
 }

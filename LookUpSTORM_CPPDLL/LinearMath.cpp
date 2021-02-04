@@ -39,8 +39,6 @@
 extern "C" {
 #include "atlas/atlas_reflevel2.h"
 #include "atlas/atlas_reflevel3.h"
-}
-
 
 inline
 void cblas_dsyrk(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
@@ -80,6 +78,7 @@ void cblas_dtrsv(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
         else ta = CblasNoTrans;
         ATL_dreftrsv(uplo, ta, Diag, N, A, lda, x, incX);
     }
+} // extern "C"
 }
 #endif // USE_MKL
 

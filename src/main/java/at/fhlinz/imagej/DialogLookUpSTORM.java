@@ -55,10 +55,10 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeListener;
 
 /**
- * LookUpSTORM GUI and fitting handlers
+ * LookUpSTORM Dialog and fitting handlers
  * @author A41316
  */
-public class LookUpSTORMFrame extends JFrame {
+public class DialogLookUpSTORM extends JFrame {
     private final LookUpSTORM _lookUpSTORM;
     private final JTextField _outputPathField;
     private final JTabbedPane _pane;
@@ -75,14 +75,19 @@ public class LookUpSTORMFrame extends JFrame {
     private final JSpinner _spinnerScale;
     private final JSpinner _spinnerMaxIter;
     private final JSpinner _spinnerEps;
+    private final JSpinner _spinnerPixelSize;
     private final JCheckBox _checkSaveRend;
     private final JCheckBox _checkSaveLocs;
-    private final JCheckBox _checkSaveCurves;
     private final JButton _fitButton;
     private final RenderThread _renderThread;
     private Calibration _cali;
     
-    LookUpSTORMFrame(LookUpSTORM lookUpSTORM) {
+    /** 
+     * Constructor
+     * The frame is default invisible, use setVisible to show the frame
+     * @param lookUpSTORM LookUpSTORM object
+     */
+    DialogLookUpSTORM(LookUpSTORM lookUpSTORM) {
         _lookUpSTORM = lookUpSTORM;
         _renderThread = new RenderThread(_lookUpSTORM);
         
@@ -222,6 +227,11 @@ public class LookUpSTORMFrame extends JFrame {
                 _lookUpSTORM.setEpsilon((double)_spinnerEps.getValue());
             });
             
+            panelGeneral.add(label("Input PixelSize (nm):"));
+            _spinnerPixelSize = new JSpinner();
+            _spinnerPixelSize.setModel(new SpinnerNumberModel(100.0, 1.0, 25000.0, 100.0));
+            panelGeneral.add(_spinnerPixelSize);
+            
             _checkSaveRend = new JCheckBox("Save rendered image");
             _checkSaveRend.setSelected(true);
             panelGeneral.add(_checkSaveRend);
@@ -229,9 +239,6 @@ public class LookUpSTORMFrame extends JFrame {
             _checkSaveLocs = new JCheckBox("Save localizations");
             _checkSaveLocs.setSelected(true);
             panelGeneral.add(_checkSaveLocs);
-            
-            _checkSaveCurves = new JCheckBox("Save curves");
-            panelGeneral.add(_checkSaveCurves);
         }
         _pane.addTab("General", panelGeneral);
         
@@ -271,6 +278,10 @@ public class LookUpSTORMFrame extends JFrame {
         });
     }
     
+    /** 
+     * 
+     * @param fileName 
+     */
     public void setFileName(String fileName) {
         if (fileName.toLowerCase().endsWith(".yaml"))
             _comboSource.setSelectedIndex(0);
@@ -281,8 +292,20 @@ public class LookUpSTORMFrame extends JFrame {
             _fileNameField.setText(fileName);
     }
     
+    /** 
+     * 
+     * @param path 
+     */
     public void setOutputPath(String path) {
         _outputPathField.setText(path);
+    }
+    
+    /** 
+     * 
+     * @param pixelSize_nm 
+     */
+    public void setPixelSize(double pixelSize_nm) {
+        _spinnerPixelSize.setValue(pixelSize_nm);
     }
     
     private static JLabel label(String text) {
@@ -456,6 +479,7 @@ public class LookUpSTORMFrame extends JFrame {
             final String out = "Found " + _lookUpSTORM.numberOfAllLocs() + " emitters in " + (t1 - t0) / 1E9 + " s!";
             IJ.showStatus(out);
             System.out.println(out);
+            save(imp.getTitle());
         };
         (new Thread(fitter)).start();
     }
@@ -465,17 +489,48 @@ public class LookUpSTORMFrame extends JFrame {
         _lookUpSTORM.release();
     }
     
+    private void save(String inputName) {
+        final String outPath = _outputPathField.getText();
+        if (outPath.isEmpty()) {
+            return;
+        }
+        final int indexDot = inputName.lastIndexOf('.');
+        if (indexDot > 0) {
+            inputName = inputName.substring(0, indexDot);
+        }
+        final boolean saveRendering = _checkSaveRend.isSelected();
+        final boolean saveLocs = _checkSaveLocs.isSelected();
+        
+        final String outBase = outPath + File.separator + inputName;
+        System.out.println("Save: " + outBase);
+        if (saveRendering) {
+            _renderThread.save(outBase + "_SMLM.png");
+        }
+        if (saveLocs) {
+            final double pixelSize = (double)_spinnerPixelSize.getValue();
+            final String fileName = outBase + "_SMLM.csv";
+            if (!_lookUpSTORM.saveLocsCSV(fileName, pixelSize)) {
+                JOptionPane.showMessageDialog(this, 
+                    "Could not save localizations as: " + fileName, 
+                    "Error LookUpSTORM", 
+                    JOptionPane.WARNING_MESSAGE);
+            }
+        }
+    }
+    
     private void startAnalysisGUI() {
         _pane.setEnabledAt(0, false);
         _pane.setSelectedIndex(1);
         _spinnerScale.setEnabled(false);
         _fitButton.setEnabled(false);
+        _spinnerPixelSize.setEnabled(false);
     }
     
     private void stopAnalysisGUI() {
         _pane.setEnabledAt(0, true);
         _spinnerScale.setEnabled(true);
         _fitButton.setEnabled(true);
+        _spinnerPixelSize.setEnabled(true);
     }
     
     private boolean checkLUTData(String fileName, String selectedSource) {

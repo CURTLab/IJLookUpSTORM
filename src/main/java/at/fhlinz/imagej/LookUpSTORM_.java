@@ -35,13 +35,13 @@ import ij.plugin.PlugIn;
 
 public class LookUpSTORM_ implements PlugIn {
     private final LookUpSTORM _lookUpSTORM;
-    private final LookUpSTORMFrame _frame;
+    private final DialogLookUpSTORM _frame;
     
     public LookUpSTORM_() {
         _lookUpSTORM = new LookUpSTORM();
         //_lookUpSTORM.setVerbose(true);
         
-        _frame = new LookUpSTORMFrame(_lookUpSTORM);
+        _frame = new DialogLookUpSTORM(_lookUpSTORM);
     }
 
     @Override

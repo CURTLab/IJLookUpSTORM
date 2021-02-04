@@ -56,6 +56,7 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setLookUpTable___3D
 		return false;
 	}
 	LookUpSTORM::inst()->renderer().setAxialRange(f.minAx(), f.maxAx());
+	LookUpSTORM::inst()->reset();
 	return true;
 }
 
@@ -88,7 +89,12 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setLookUpTable__Lja
 	double* data = new double[size];
 	file.read((char*)data, hdr.dataSize);
 	file.close();
-	return LookUpSTORM::inst()->fitter().setLookUpTable(data, size, true, hdr.windowSize, hdr.dLat, hdr.dAx, hdr.rangeLat, hdr.rangeAx);
+	Fitter& f = LookUpSTORM::inst()->fitter();
+	if (!f.setLookUpTable(data, size, true, hdr.windowSize, hdr.dLat, hdr.dAx, hdr.rangeLat, hdr.rangeAx))
+		return false;
+	LookUpSTORM::inst()->renderer().setAxialRange(f.minAx(), f.maxAx());
+	LookUpSTORM::inst()->reset();
+	return true;
 }
 
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_releaseLookUpTable
@@ -151,6 +157,7 @@ JNIEXPORT jint JNICALL Java_at_fhlinz_imagej_LookUpSTORM_numberOfDetectedLocs
 JNIEXPORT jobjectArray JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getAllLocs
 (JNIEnv* env, jobject)
 {
+	// https://gamedev.stackexchange.com/questions/96947/jni-multidimensional-array-as-return-value
 	jobjectArray result;
 
 	std::list<Molecule>& mols = LookUpSTORM::inst()->allMolecues();
@@ -239,6 +246,7 @@ JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_reset
 (JNIEnv*, jobject)
 {
 	LookUpSTORM::inst()->reset();
+	LookUpSTORM::inst()->renderer().clear();
 }
 
 JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setVerbose
