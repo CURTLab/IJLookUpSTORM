@@ -82,7 +82,11 @@ public:
 	T* data();
 	const T* constData() const;
 
+	// return pointer without null check!
 	T* scanLine(int line);
+	const T* scanLine(int line) const;
+	T* ptr(int x, int y);
+	const T* ptr(int x, int y) const;
 
 private:
 	ImageData<T>* d;

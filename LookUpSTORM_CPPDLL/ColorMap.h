@@ -30,28 +30,44 @@
 #ifndef COLORMAP_H
 #define COLORMAP_H
 
+#include "Common.h"
+
 #include <tuple>
 #include <vector>
 
 namespace LookUpSTORM
 { 
 
-class ColorMap
+class DLL_DEF_LUT ColorMap
 {
 public:
 	ColorMap();
+	ColorMap(double min, double max);
+	virtual ~ColorMap();
 
-	uint32_t rgb(double value, double scale = 1.f) const;
+	uint32_t rgb(double value, double scale = 1.0) const;
 
 	void setRange(double min, double max);
 
+	void generate(double min, double max, double step, double scale = 1.0);
+
+	uint32_t cachedRgb(double value) const;
+
+	double min() const;
+	double max() const;
+	double step() const;
+
+	bool isCached() const;
+
 private:
-	std::tuple<double, double, double> rgbFromWaveLength(double wavelength) const;
+	static std::tuple<double, double, double> rgbFromWaveLength(double wavelength);
 	double m_min;
 	double m_max;
+	double m_step;
 	static constexpr double m_f1 = 1.0 / 400;
 	static constexpr double m_f2 = 1.0 / 780;
-	double m_step;
+	size_t m_entries;
+	uint32_t *m_lut;
 
 };
 

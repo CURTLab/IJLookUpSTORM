@@ -33,6 +33,10 @@
 
 using namespace LookUpSTORM;
 
+inline constexpr uint8_t red(uint32_t color) { return (color >> 16) & 0xff; }
+inline constexpr uint8_t green(uint32_t color) { return (color >> 8) & 0xff; }
+inline constexpr uint8_t blue(uint32_t color) { return color & 0xff; }
+
 inline constexpr uint32_t boundRGB(double red, double green, double blue)
 {
     const int r = bound<int>(red * 255, 0, 255);
@@ -42,8 +46,18 @@ inline constexpr uint32_t boundRGB(double red, double green, double blue)
 }
 
 ColorMap::ColorMap()
-    : m_min(0.0), m_max(1.0), m_step(0.0)
+    : m_min(0.0), m_max(1.0), m_step(0.0), m_entries(0), m_lut(nullptr)
 {
+}
+
+ColorMap::ColorMap(double min, double max)
+    : m_min(min), m_max(max), m_step(0.0), m_entries(0), m_lut(nullptr)
+{
+}
+
+LookUpSTORM::ColorMap::~ColorMap()
+{
+    delete[] m_lut;
 }
 
 uint32_t ColorMap::rgb(double value, double scale) const
@@ -60,7 +74,51 @@ void ColorMap::setRange(double min, double max)
     m_max = max;
 }
 
-std::tuple<double, double, double> ColorMap::rgbFromWaveLength(double wavelength) const
+void ColorMap::generate(double min, double max, double step, double scale)
+{
+    m_min = min;
+    m_max = max;
+    m_step = step;
+    const double range = max - min;
+    const size_t number = static_cast<size_t>(std::floor(((range / step) + 1)));
+    delete[] m_lut;
+    m_entries = number;
+    m_lut = new uint32_t[number];
+    for (size_t i = 0; i < number; ++i) {
+        const double z = min + i * step;
+        m_lut[i] = rgb(z, scale);
+        //std::cerr << i << ", " << z << ": r:" << (uint32_t)red(m_lut[i]) << " g:" << (uint32_t)green(m_lut[i]) << " b:" << (uint32_t)blue(m_lut[i]) << std::endl;
+    }
+}
+
+uint32_t ColorMap::cachedRgb(double value) const
+{
+    const size_t i = static_cast<size_t>(std::round((value - m_min) / m_step));
+    //std::cerr << i << ", " << value << ": r:" << (uint32_t)red(m_lut[i]) << " g:" << (uint32_t)green(m_lut[i]) << " b:" << (uint32_t)blue(m_lut[i]) << std::endl;
+    return m_lut[i];
+}
+
+double ColorMap::min() const
+{
+    return m_min;
+}
+
+double ColorMap::max() const
+{
+    return m_max;
+}
+
+double ColorMap::step() const
+{
+    return m_step;
+}
+
+bool ColorMap::isCached() const
+{
+    return (m_step > 0.0) && (m_entries > 0);
+}
+
+std::tuple<double, double, double> ColorMap::rgbFromWaveLength(double wavelength)
 {
     double r = 0.0;
     double g = 0.0;

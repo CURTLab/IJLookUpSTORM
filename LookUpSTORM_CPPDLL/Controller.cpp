@@ -280,14 +280,6 @@ void Controller::setRenderSize(int width, int height)
         double(height) / m_imageHeight);
 }
 
-ImageU32 Controller::renderSMLMImage()
-{
-    m_isSMLMImageReady.store(false);
-    auto ret = m_renderer.render();
-    m_isSMLMImageReady.store(true);
-    return ret;
-}
-
 void Controller::reset()
 {
     m_isLocFinished.store(false);

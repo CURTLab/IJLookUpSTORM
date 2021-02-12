@@ -45,12 +45,13 @@ public:
 
 	void release();
 
-	using OutType = uint32_t;
-
+	// returns true if setSize and setSettings is called
 	bool isReady() const;
 
+	// these functions have to be called!
 	void setSize(int width, int height, double scaleX, double scaleY);
-	void setAxialRange(double min, double max);
+	void setSettings(double minZ, double maxZ, double stepZ, float sigma);
+
 	void setSigma(float sigma);
 	int imageWidth() const;
 	int imageHeight() const;
@@ -60,29 +61,36 @@ public:
 
 	std::pair<int, int> map(double x, double y) const;
 
-	Image<OutType> render();
-	void setRenderImage(OutType* imagePtr, int width, int height, double scaleX, double scaleY);
+	void setRenderImage(uint32_t* imagePtr, int width, int height, double scaleX, double scaleY);
 	bool updateImage(Rect region = Rect());
-	const OutType* renderImagePtr() const;
+	const uint32_t* renderImagePtr() const;
 
 	void clear();
 
 	const ImageF32 &rawImage() const;
 
+	// thread-safe
+	void setRenderingEnabled(bool enabled);
+	// thread-safe
+	bool isRenderingEnabled() const;
+
 private:
-	void render(const ImageF32 &in, Image<OutType> &out) const;
-	void renderTile(const Rect& tile, const ImageF32& in, Image<OutType>& image) const;
-	OutType pixel(const ImageF32& in, int x, int y) const;
+	void render(Rect roi);
+	void renderTile(const Rect& tile);
+	uint32_t pixelCached(int x, int y) const;
 
 	ImageF32 m_image;
-	Image<OutType> m_renderImage;
+	ImageU32 m_renderImage;
 
 	float m_corner;
 	float m_cross;
 	double m_scaleX;
 	double m_scaleY;
-	ColorMap m_cmap;
 	std::mutex m_mutex;
+	ColorMap m_colorLUT;
+	ColorMap m_colorCornerLUT;
+	ColorMap m_colorCrossLUT;
+	std::atomic<bool> m_enableRendering;
 
 };
 

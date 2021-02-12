@@ -40,9 +40,8 @@ Renderer::Renderer()
     , m_cross(0.f)
     , m_scaleX(1.)
     , m_scaleY(1.)
+    , m_enableRendering(true)
 {
-    setSigma(1.f);
-    m_cmap.setRange(-500.0, 500.0);
 }
 
 Renderer::Renderer(int width, int height, double scaleX, double scaleY)
@@ -51,20 +50,19 @@ Renderer::Renderer(int width, int height, double scaleX, double scaleY)
     , m_cross(0.f)
     , m_scaleX(scaleX)
     , m_scaleY(scaleY)
+    , m_enableRendering(true)
 {
-    setSigma(1.f);
-    m_cmap.setRange(-500.0, 500.0);
 }
 
 void Renderer::release()
 {
     m_image = ImageF32();
-    m_renderImage = Image<OutType>();
+    m_renderImage = ImageU32();
 }
 
 bool Renderer::isReady() const
 {
-    return !m_image.isNull();
+    return !m_image.isNull() && m_colorLUT.isCached();
 }
 
 void Renderer::setSize(int width, int height, double scaleX, double scaleY)
@@ -76,15 +74,25 @@ void Renderer::setSize(int width, int height, double scaleX, double scaleY)
     }
 }
 
-void Renderer::setAxialRange(double min, double max)
+void LookUpSTORM::Renderer::setSettings(double minZ, double maxZ, double stepZ, float sigma)
 {
-    m_cmap.setRange(min, max);
+    m_cross = expf(-0.5f * sqr(1.f / sigma));
+    m_corner = expf(-sqr(1.f / sigma));
+
+    m_colorLUT.generate(minZ, maxZ, stepZ);
+    m_colorCrossLUT.generate(minZ, maxZ, stepZ, m_cross);
+    m_colorCornerLUT.generate(minZ, maxZ, stepZ, m_corner);
 }
 
 void Renderer::setSigma(float sigma)
 {
 	m_cross = expf(-0.5f * sqr(1.f / sigma));
 	m_corner = expf(-sqr(1.f / sigma));
+
+    if (m_colorCrossLUT.isCached())
+        m_colorCrossLUT.generate(m_colorCrossLUT.min(), m_colorCrossLUT.max(), m_colorCrossLUT.step(), m_cross);
+    if (m_colorCornerLUT.isCached())
+        m_colorCornerLUT.generate(m_colorCornerLUT.min(), m_colorCornerLUT.max(), m_colorCornerLUT.step(), m_cross);
 }
 
 int Renderer::imageWidth() const
@@ -118,31 +126,19 @@ std::pair<int, int> Renderer::map(double x, double y) const
     return { dx, dy };
 }
 
-Image<Renderer::OutType> Renderer::render()
+void Renderer::setRenderImage(uint32_t* imagePtr, int width, int height, double scaleX, double scaleY)
 {
-    if (m_image.isNull())
-        return {};
-
-    Image<OutType> ret(m_image.width(), m_image.height());
-    render(m_image, ret);
-    return ret;
-}
-
-void Renderer::setRenderImage(OutType* imagePtr, int width, int height, double scaleX, double scaleY)
-{
-    m_renderImage = Image<OutType>(width, height, imagePtr, false);
+    m_renderImage = ImageU32(width, height, imagePtr, false);
     setSize(width, height, scaleX, scaleY);
 }
 
 bool Renderer::updateImage(Rect region)
 {
-    if (m_renderImage.isNull())
+    if (m_renderImage.isNull() || (!m_enableRendering.load()))
         return false;
-    render(m_image, m_renderImage);
-    return true;
     
     if (region.isNull()) {
-        render(m_image, m_renderImage);
+        render(m_image.rect());
     }
     else {
         // extend region by 1
@@ -150,14 +146,12 @@ bool Renderer::updateImage(Rect region)
         if (region.top() > 0) region.moveTop(region.top() - 1);
         if (region.right() < m_image.width()-1) region.moveRight(region.right() + 1);
         if (region.bottom() < m_image.height()-1) region.moveBottom(region.bottom() + 1);
-        ImageF32 in = m_image.subImage(region);
-        Image<OutType> out = m_renderImage.subImage(region);
-        render(in, out);
+        render(region);
     }
     return true;
 }
 
-const Renderer::OutType* Renderer::renderImagePtr() const
+const uint32_t* Renderer::renderImagePtr() const
 {
     return m_renderImage.constData();
 }
@@ -173,67 +167,67 @@ const ImageF32& Renderer::rawImage() const
     return m_image;
 }
 
-void Renderer::render(const ImageF32& in, Image<OutType>& out) const
+void LookUpSTORM::Renderer::setRenderingEnabled(bool enabled)
 {
-    if (in.isNull() || out.isNull() || (in.rect() != out.rect()))
-        return;
+    m_enableRendering.store(enabled);
+}
 
-    Rect tile(0, 0, in.width(), in.height());
-    renderTile(tile, in, out);
-    return;
+bool LookUpSTORM::Renderer::isRenderingEnabled() const
+{
+    return m_enableRendering.load();
+}
 
+void Renderer::render(Rect roi)
+{
     unsigned int numThreads = std::max(1u, std::thread::hardware_concurrency());
-    const int numRows = in.height() / numThreads;
+    const int numRows = roi.height() / numThreads;
 
     std::vector<std::future<void>> futures;
+    futures.reserve(1ull + numThreads);
     for (unsigned int i = 0; i < numThreads; ++i) {
-        Rect tile(0, i * numRows, in.width(), numRows);
-        if (i == numThreads - 1) {
-            tile.setHeight(in.height() - i * numRows);
-            renderTile(tile, in, out);
-        }
-        else {
-            auto fun = [this, tile, &in, &out]() { renderTile(tile, in, out); };
-            futures.push_back(std::async(std::launch::async, fun));
-        }
+        Rect tile(0, i * numRows, roi.width(), numRows);
+        if (i == numThreads - 1)
+            tile.setHeight(roi.height() - i * numRows);
+        auto fun = [this, tile]() { renderTile(tile); };
+        futures.push_back(std::async(std::launch::async, fun));
     }
     for (size_t i = 0; i < futures.size(); ++i)
         futures[i].wait();
 }
 
-void Renderer::renderTile(const Rect& tile, const ImageF32 &in, Image<OutType>& image) const
+void Renderer::renderTile(const Rect& tile)
 {
+    const int left = tile.left();
     for (int y = tile.top(); y <= tile.bottom(); ++y) {
-        auto* line = image.scanLine(y);
-        line += tile.left();
-
-        for (int x = tile.left(); x <= tile.right(); ++x)
-            *line++ = pixel(in, x, y);
+        uint32_t* line = m_renderImage.ptr(left, y);
+        for (int x = left; x <= tile.right(); ++x)
+            *line++ = pixelCached(x, y);
     }
 }
 
-Renderer::OutType Renderer::pixel(const ImageF32& in, int x, int y) const
+uint32_t Renderer::pixelCached(int x, int y) const
 {
-    const Rect r = m_image.rect();
-    if (m_image(x, y) != 0.0f)
-        return m_cmap.rgb(m_image(x, y));
+    if ((x < 1) || (y < 1) || (x >= m_image.width() - 1) || (y >= m_image.height() - 1))
+        return BLACK;
 
     float val;
-    if ((x > 0) && ((val = m_image(x - 1, y)) != 0.0f))
-        return m_cmap.rgb(val, m_cross);
-    if ((x + 1 < m_image.width()) && ((val = m_image(x + 1, y)) != 0.0f))
-        return m_cmap.rgb(val, m_cross);
-    if ((y > 0) && ((val = m_image(x, y - 1)) != 0.0f))
-        return m_cmap.rgb(val, m_cross);
-    if ((y + 1 < m_image.height()) && ((val = m_image(x, y + 1)) != 0.0f))
-        return m_cmap.rgb(val, m_cross);
-    if (m_image.pixel(x - 1, y - 1, val) && (val != 0.f))
-        return m_cmap.rgb(val, m_corner);
-    if (m_image.pixel(x + 1, y - 1, val) && (val != 0.f))
-        return m_cmap.rgb(val, m_corner);
-    if (m_image.pixel(x - 1, y + 1, val) && (val != 0.f))
-        return m_cmap.rgb(val, m_corner);
-    if (m_image.pixel(x + 1, y + 1, val) && (val != 0.f))
-        return m_cmap.rgb(val, m_corner);
+    val = m_image(x, y);
+    if (val != 0.0f) return m_colorLUT.cachedRgb(val);
+
+    const int startX = x - 1;
+    const float* line = m_image.ptr(startX, y - 1);
+    if (*line != 0.0f) return m_colorCornerLUT.cachedRgb(*line);
+    else if (*(++line) != 0.0f) return m_colorCrossLUT.cachedRgb(*line);
+    else if (*(++line) != 0.0f) return m_colorCornerLUT.cachedRgb(*line);
+    
+    line = m_image.ptr(startX, y);
+    if (*line != 0.0f) return m_colorCrossLUT.cachedRgb(*line);
+    line += 2;
+    if (*line != 0.0f) return m_colorCrossLUT.cachedRgb(*line);
+
+    line = m_image.ptr(startX, y + 1);
+    if (*line != 0.0f) return m_colorCornerLUT.cachedRgb(*line);
+    else if (*(++line) != 0.0f) return m_colorCrossLUT.cachedRgb(*line);
+    else if (*(++line) != 0.0f) return m_colorCornerLUT.cachedRgb(*line);
     return BLACK;
 }

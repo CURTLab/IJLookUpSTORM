@@ -99,7 +99,6 @@ public:
 	Renderer& renderer();
 	void setRenderScale(double scale);
 	void setRenderSize(int width, int height);
-	ImageU32 renderSMLMImage();
 
 	void reset();
 

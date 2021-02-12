@@ -38,7 +38,7 @@
 #undef max
 
 #define NO_LAPACKE_LUT
-// #define USE_MKL_LUT
+//#define USE_MKL_LUT
 #define JNI_EXPORT_LUT
 //#define DLL_EXPORT_LUT
 

@@ -60,7 +60,7 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setLookUpTable___3D
 		env->ReleasePrimitiveArrayCritical(lookup, data, JNI_ABORT);
 		return false;
 	}
-	Controller::inst()->renderer().setAxialRange(f.minAx(), f.maxAx());
+	Controller::inst()->renderer().setSettings(f.minAx(), f.maxAx(), f.deltaAx(), 1.f);
 	Controller::inst()->reset();
 	return true;
 }
@@ -97,7 +97,7 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setLookUpTable__Lja
 	Fitter& f = Controller::inst()->fitter();
 	if (!f.setLookUpTable(data, size, true, hdr.windowSize, hdr.dLat, hdr.dAx, hdr.rangeLat, hdr.rangeAx))
 		return false;
-	Controller::inst()->renderer().setAxialRange(f.minAx(), f.maxAx());
+	Controller::inst()->renderer().setSettings(f.minAx(), f.maxAx(), f.deltaAx(), 1.f);
 	Controller::inst()->reset();
 	return true;
 }

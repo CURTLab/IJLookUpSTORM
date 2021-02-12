@@ -253,7 +253,25 @@ const T* Image<T>::constData() const
 template<class T>
 T* Image<T>::scanLine(int line)
 {
-    return d ? d->data + (d->stride * line) : nullptr;
+    return d->data + (d->stride * line);
+}
+
+template<class T>
+const T* Image<T>::scanLine(int line) const
+{
+    return d->data + (d->stride * line);
+}
+
+template<class T>
+T* LookUpSTORM::Image<T>::ptr(int x, int y)
+{
+    return d->data + (d->stride * y + x);
+}
+
+template<class T>
+const T* Image<T>::ptr(int x, int y) const
+{
+    return d->data + (d->stride * y + x);
 }
 
 #define DECLARE(T) \
