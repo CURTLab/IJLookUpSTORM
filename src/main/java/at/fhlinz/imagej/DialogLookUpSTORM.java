@@ -36,6 +36,8 @@ import ij.WindowManager;
 import ij.process.ImageProcessor;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -52,6 +54,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 /**
@@ -107,8 +110,11 @@ public class DialogLookUpSTORM extends JFrame {
         topPanel.add(buttonSelOutput);
         super.add(topPanel);
         
-        buttonSelOutput.addActionListener((ActionEvent) -> {
-            doSelectOutputDir();
+        buttonSelOutput.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doSelectOutputDir();
+            }
         });
         
         _pane = new JTabbedPane
@@ -119,8 +125,11 @@ public class DialogLookUpSTORM extends JFrame {
         {
             panelLUT.setLayout(new GridLayout(9, 2, 5, 5));
             
-            ChangeListener listener = (ChangeEvent) -> {
-                updateRAMUsage();
+            ChangeListener listener = new ChangeListener() {
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    updateRAMUsage();
+                }
             };
 
             panelLUT.add(label("Source:"));
@@ -167,8 +176,11 @@ public class DialogLookUpSTORM extends JFrame {
                 JButton buttonSelFileName = new JButton("...");
                 fpanel.add(buttonSelFileName);
                 
-                buttonSelFileName.addActionListener((ActionEvent) -> {
-                    doSelectFileName();
+                buttonSelFileName.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        doSelectFileName();
+                    }
                 });
             }
             
@@ -183,8 +195,11 @@ public class DialogLookUpSTORM extends JFrame {
             _buttonGenerate.setEnabled(false);
             panelLUT.add(_buttonGenerate);
             
-            _buttonGenerate.addActionListener((ActionEvent) -> {
-                doGenerate();
+            _buttonGenerate.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    doGenerate();
+                }
             });
         }
         _pane.addTab("LUT", panelLUT);
@@ -200,8 +215,11 @@ public class DialogLookUpSTORM extends JFrame {
             _spinnerThreshold.setModel(new SpinnerNumberModel(40, 1, 13000, 1));
             panelGeneral.add(_spinnerThreshold);
             
-            _spinnerThreshold.addChangeListener((ChangeEvent) -> {
-                _lookUpSTORM.setThreshold((int)_spinnerThreshold.getValue());
+            _spinnerThreshold.addChangeListener(new ChangeListener() {
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    _lookUpSTORM.setThreshold((int)_spinnerThreshold.getValue());
+                }
             });
 
             panelGeneral.add(label("Render Scale:"));
@@ -214,8 +232,11 @@ public class DialogLookUpSTORM extends JFrame {
             _spinnerMaxIter.setModel(new SpinnerNumberModel(5, 1, 50, 1));
             panelGeneral.add(_spinnerMaxIter);
             
-            _spinnerMaxIter.addChangeListener((ChangeEvent) -> {
-                _lookUpSTORM.setMaxIter((int)_spinnerMaxIter.getValue());
+            _spinnerMaxIter.addChangeListener(new ChangeListener() {
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    _lookUpSTORM.setMaxIter((int)_spinnerMaxIter.getValue());
+                }
             });
 
             panelGeneral.add(label("Delta Epsilon:"));
@@ -223,8 +244,11 @@ public class DialogLookUpSTORM extends JFrame {
             _spinnerEps.setModel(new SpinnerNumberModel(1E-2d, 1E-10d, 1E3d, 1E-1d));
             panelGeneral.add(_spinnerEps);
             
-            _spinnerEps.addChangeListener((ChangeEvent) -> {
-                _lookUpSTORM.setEpsilon((double)_spinnerEps.getValue());
+            _spinnerEps.addChangeListener(new ChangeListener() {
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    _lookUpSTORM.setEpsilon((double)_spinnerEps.getValue());
+                }
             });
             
             panelGeneral.add(label("Input PixelSize (nm):"));
@@ -252,8 +276,11 @@ public class DialogLookUpSTORM extends JFrame {
         _fitButton.setEnabled(false);
         buttonPanel.add(_fitButton);
         
-        _fitButton.addActionListener((ActionEvent) -> {
-            doFitCurrent();
+        _fitButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doFitCurrent();
+            }
         });
         
         updateRAMUsage();
@@ -288,7 +315,7 @@ public class DialogLookUpSTORM extends JFrame {
         else if (fileName.toLowerCase().endsWith(".lut"))
             _comboSource.setSelectedIndex(1);
         final String selectSource = (String)_comboSource.getSelectedItem();
-        if (checkLUTData(fileName, selectSource))
+        if (checkLUTData(fileName))
             _fileNameField.setText(fileName);
     }
     
@@ -342,10 +369,12 @@ public class DialogLookUpSTORM extends JFrame {
         }
 
         f.setCurrentDirectory(new java.io.File(_outputPathField.getText()));
-        if (f.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) 
+        final int ret = f.showOpenDialog(this);
+        IJ.showStatus("Ret: " + ret);
+        if (ret == JFileChooser.APPROVE_OPTION) 
         {
             final String fileName = f.getSelectedFile().toString();
-            if (checkLUTData(fileName, selectSource)) { 
+            if (checkLUTData(fileName)) { 
                 _fileNameField.setText(fileName);
             } else {
                 JOptionPane.showMessageDialog(this, 
@@ -387,24 +416,27 @@ public class DialogLookUpSTORM extends JFrame {
                 return;
             } 
             // finally populate the LUT in a thread
-            Runnable generator = () -> {
-                final long t0 = System.nanoTime();
-                if (!lut.populate(winSize, dLat, dAx, rangeLat, rangeAx)) {
-                    JOptionPane.showMessageDialog(this, 
-                            "Could not generate AstigmatismLUT!", "Error LookUpSTORM", 
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
+            Runnable generator = new Runnable() {
+                @Override
+                public void run() {
+                    final long t0 = System.nanoTime();
+                    if (!lut.populate(winSize, dLat, dAx, rangeLat, rangeAx)) {
+                        JOptionPane.showMessageDialog(null, 
+                                "Could not generate AstigmatismLUT!", "Error LookUpSTORM", 
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                        if (!_lookUpSTORM.setLUT(lut)) {
+                        JOptionPane.showMessageDialog(null, 
+                                "Failed to set AstigmatismLUT for DLL!", "Error LookUpSTORM", 
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    final long t1 = System.nanoTime();
+                    IJ.showStatus("Generated LUT in " + (t1 - t0) / 1E9 + " s!");
+                    System.out.println("Generated LUT in " + (t1 - t0) / 1E9 + " s!");
+                    _fitButton.setEnabled(true);
                 }
-                if (!_lookUpSTORM.setLUT(lut)) {
-                    JOptionPane.showMessageDialog(this, 
-                            "Failed to set AstigmatismLUT for DLL!", "Error LookUpSTORM", 
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                final long t1 = System.nanoTime();
-                IJ.showStatus("Generated LUT in " + (t1 - t0) / 1E9 + " s!");
-                System.out.println("Generated LUT in " + (t1 - t0) / 1E9 + " s!");
-                _fitButton.setEnabled(true);
             };
             (new Thread(generator)).start();
         } else if (selectedSource.equals("From Binary File")) {
@@ -456,30 +488,33 @@ public class DialogLookUpSTORM extends JFrame {
         if (dLat > (1.0/scale)) {
             JOptionPane.showMessageDialog(this, 
                     "Render image resolution is bigger than the lateral steps. "
-                        + "This can result in artefacts!", "Error LookUpSTORM", 
+                        + "This can result in artefacts!", "Warning LookUpSTORM", 
                     JOptionPane.WARNING_MESSAGE);
         }
         
         _renderThread.startRendering();
-        Runnable fitter = () -> {
-            startAnalysisGUI();
-            final int frames = stack.getSize();
-            final long t0 = System.nanoTime();
-            _lookUpSTORM.reset();
-            for (int frame = 0; frame < frames; frame++) {
-                ImageProcessor ip = stack.getProcessor(frame + 1);
-                if (!_lookUpSTORM.feedImage(ip, frame)) 
-                    continue;
-                _lookUpSTORM.waitForLocFinished(1, 100);
-                IJ.showProgress(frame, frames);
+        Runnable fitter = new Runnable() {
+            @Override
+            public void run() {
+                startAnalysisGUI();
+                final int frames = stack.getSize();
+                final long t0 = System.nanoTime();
+                _lookUpSTORM.reset();
+                for (int frame = 0; frame < frames; frame++) {
+                    ImageProcessor ip = stack.getProcessor(frame + 1);
+                    if (!_lookUpSTORM.feedImage(ip, frame)) 
+                        continue;
+                    _lookUpSTORM.waitForLocFinished(1, 100);
+                    IJ.showProgress(frame, frames);
+                }
+                _renderThread.stopRendering();
+                final long t1 = System.nanoTime();
+                stopAnalysisGUI();
+                final String out = "Found " + _lookUpSTORM.numberOfAllLocs() + " emitters in " + (t1 - t0) / 1E9 + " s!";
+                IJ.showStatus(out);
+                System.out.println(out);
+                save(imp.getTitle());
             }
-            _renderThread.stopRendering();
-            final long t1 = System.nanoTime();
-            stopAnalysisGUI();
-            final String out = "Found " + _lookUpSTORM.numberOfAllLocs() + " emitters in " + (t1 - t0) / 1E9 + " s!";
-            IJ.showStatus(out);
-            System.out.println(out);
-            save(imp.getTitle());
         };
         (new Thread(fitter)).start();
     }
@@ -512,7 +547,7 @@ public class DialogLookUpSTORM extends JFrame {
             if (!_lookUpSTORM.saveLocsCSV(fileName, pixelSize)) {
                 JOptionPane.showMessageDialog(this, 
                     "Could not save localizations as: " + fileName, 
-                    "Error LookUpSTORM", 
+                    "Warning LookUpSTORM", 
                     JOptionPane.WARNING_MESSAGE);
             }
         }
@@ -533,8 +568,17 @@ public class DialogLookUpSTORM extends JFrame {
         _spinnerPixelSize.setEnabled(true);
     }
     
-    private boolean checkLUTData(String fileName, String selectedSource) {
-        if (selectedSource.equals("From Binary File")) {
+    private boolean checkLUTData(String fileName) {
+        final int index = _comboSource.getSelectedIndex();
+        if (index == 0) {
+            _cali = new Calibration();
+            if (_cali.load(fileName)) {
+                _cali.plot();
+                _buttonGenerate.setEnabled(true);
+                updateRAMUsage();
+                return true;
+            }
+        } else if (index == 1) {
             BinaryLUT lut = new BinaryLUT();
             if (lut.loadHeader(fileName)) {
                 _comboWinSize.setSelectedIndex(lut.getWindowSize() == 11 ? 1 : 0);
@@ -546,15 +590,7 @@ public class DialogLookUpSTORM extends JFrame {
                 updateRAMUsage();
                 return true;
             }
-        } else if (selectedSource.equals("Astigmatism")) {
-            _cali = new Calibration();
-            if (_cali.load(fileName)) {
-                _cali.plot();
-                _buttonGenerate.setEnabled(true);
-                updateRAMUsage();
-                return true;
-            }
-        }
+        } 
         return false;
     }
     

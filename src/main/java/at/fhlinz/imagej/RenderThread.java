@@ -105,6 +105,9 @@ public class RenderThread extends Thread {
      * image
      */
     public void release() {
+        if (!_running) {
+            return;
+        }
         _running = false;
         while(isAlive()) {
             try {
@@ -113,7 +116,9 @@ public class RenderThread extends Thread {
             }
         }
         _lookUp.releaseRenderImage();
-        _imagePlus.close();
+        if (_imagePlus != null) {
+            _imagePlus.close();
+        }
     }
     
     /**

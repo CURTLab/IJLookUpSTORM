@@ -32,6 +32,7 @@ package at.fhlinz.imagej;
 import ij.IJ;
 import ij.ImageJ;
 import ij.plugin.PlugIn;
+import javax.swing.JOptionPane;
 
 public class LookUpSTORM_ implements PlugIn {
     private final LookUpSTORM _lookUpSTORM;
@@ -46,10 +47,17 @@ public class LookUpSTORM_ implements PlugIn {
 
     @Override
     public void run(String arg) {
-        if ((arg != null) && (arg.length() > 0)) {
-            _frame.setFileName(arg);
+        if (arg.startsWith("about")) {
+            JOptionPane.showMessageDialog(null, 
+                        "LookUp STORM Version " + _lookUpSTORM.getVersion(), 
+                        "About LookUpSTORM", 
+                        JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            if (arg.length() > 0) {
+                _frame.setFileName(arg);
+            }
+            _frame.setVisible(true);
         }
-        _frame.setVisible(true);
     }
     
    /**
@@ -72,7 +80,7 @@ public class LookUpSTORM_ implements PlugIn {
        // start ImageJ
        new ImageJ();
        
-       String path = "C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/Sim/";
+       /*String path = "C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/Sim/";
        String cali = "sequence-as-stack-Beads-AS-Exp.yaml";
        String img = "sunburst2.SPE";
        //ij.ImagePlus image = SpeFile_.open(path, "NewPlatelets_c500_f700_50mM_TestRT_red_015.SPE");
@@ -80,6 +88,6 @@ public class LookUpSTORM_ implements PlugIn {
         //ij.ImagePlus image = SpeFile_.open(path, "cross.SPE");
        image.show();
        
-       IJ.runPlugIn(clazz.getName(), path + cali);
+       IJ.runPlugIn(clazz.getName(), path + cali);*/
    }
 }

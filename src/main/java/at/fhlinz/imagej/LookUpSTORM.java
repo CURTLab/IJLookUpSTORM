@@ -43,7 +43,9 @@ public class LookUpSTORM {
     }
     
     /**
-     * 
+     * Sets the lookup table parameters for fitting. The lookupTable array has 
+     * to contains the template images and derivations for the supplied 
+     * axial and lateral steps. 
      * @param lookupTable
      * @param windowSize
      * @param dLat
@@ -232,6 +234,11 @@ public class LookUpSTORM {
     public native int getRenderImageHeight();
     
     /**
+     * @return Returns the version of LookUpSTORM CPPDLL
+     */
+    public native String getVersion();
+    
+    /**
      * Calculate the bytes needed for the LUT template array with the supplied
      * parameters.
      * @param windowSize template window size
@@ -262,6 +269,17 @@ public class LookUpSTORM {
     }
     
     /**
+     * Helper function to set the LUT
+     * @param lut Java LUT interface
+     * @return Returns true if LUT is valid and could be set
+     */
+    public boolean setLUT(LUT lut) {
+        return setLookUpTable(lut.getLookUpTableArray(), lut.getWindowSize(), 
+                              lut.getDeltaLat(), lut.getDeltaAx(), 
+                              lut.getLateralRange(), lut.getAxialRange());
+    }
+    
+    /**
      * Helper function to wait until feeded image is fitted and processes
      * @param sleepms loop wait time in ms (default 1 ms)
      * @param timeoutms timeout in ms to stop the loop
@@ -283,17 +301,6 @@ public class LookUpSTORM {
             }
         }
         return true;
-    }
-    
-    /**
-     * Helper function to set the LUT
-     * @param lut Java LUT interface
-     * @return Returns true if LUT is valid and could be set
-     */
-    public boolean setLUT(LUT lut) {
-        return setLookUpTable(lut.getLookUpTableArray(), lut.getWindowSize(), 
-                              lut.getDeltaLat(), lut.getDeltaAx(), 
-                              lut.getLateralRange(), lut.getAxialRange());
     }
     
     /** 
