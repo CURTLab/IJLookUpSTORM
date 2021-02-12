@@ -27,19 +27,26 @@
  *
  ****************************************************************************/
 
-#ifndef LOOKUPSTORM_H
-#define LOOKUPSTORM_H
+#ifndef CONTROLLER_H
+#define CONTROLLER_H
  
 #include <atomic>
 #include "Fitter.h"
 #include "Renderer.h"
 
-class LookUpSTORM
+namespace LookUpSTORM
+{
+
+class Controller
 {
 public:
-	static LookUpSTORM* inst();
+#ifdef CONTROLLER_STATIC
+	static Controller* inst();
 	static void release();
 	static bool VERBOSE;
+#else
+	void ~Controller();
+#endif
 
 	bool isReady() const;
 
@@ -78,8 +85,15 @@ public:
 
 	void reset();
 
+#ifdef CONTROLLER_STATIC
 private:
-	LookUpSTORM();
+#endif // CONTROLLER_STATIC
+	Controller();
+
+private:
+#ifdef CONTROLLER_STATIC
+	static Controller* LOOKUPSTORM_INSTANCE;
+#endif // CONTROLLER_STATIC
 
 	std::atomic<bool> m_isLocFinished;
 	std::atomic<bool> m_isSMLMImageReady;
@@ -93,7 +107,8 @@ private:
 	std::list<Molecule> m_mols;
 	Renderer m_renderer;
 
-	static LookUpSTORM* LOOKUPSTORM_INSTANCE;
 };
 
-#endif // !LOOKUPSTORM_H
+} // namespace LookUpSTORM
+
+#endif // !CONTROLLER_H

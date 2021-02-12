@@ -29,6 +29,8 @@
 
 #include "Rect.h"
 
+using namespace LookUpSTORM;
+
 bool Rect::moveInside(const Rect& r)
 {
     if (width() > r.width() && height() > r.height())

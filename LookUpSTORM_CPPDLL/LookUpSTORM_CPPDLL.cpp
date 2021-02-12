@@ -28,9 +28,11 @@
  ****************************************************************************/
 
 #include "LookUpSTORM_CPPDLL.h"
-#include "LookUpSTORM.h"
+#include "Controller.h"
 
 #include <fstream>
+
+using namespace LookUpSTORM;
 
 static jarray _JSMLMImageHelper = nullptr;
 static jarray _JLookUpTableHelper = nullptr;
@@ -49,14 +51,14 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setLookUpTable___3D
 	}
 	_JLookUpTableHelper = lookup;
 
-	Fitter& f = LookUpSTORM::inst()->fitter();
+	Fitter& f = Controller::inst()->fitter();
 	if (!f.setLookUpTable(data, size, iscopy, windowSize, dLat, dAx, rangeLat, rangeAx)) {
 		std::cerr << "LookUpSTORM_CPPDLL: Load LUT: Could not set LUT!" << std::endl;
 		env->ReleasePrimitiveArrayCritical(lookup, data, JNI_ABORT);
 		return false;
 	}
-	LookUpSTORM::inst()->renderer().setAxialRange(f.minAx(), f.maxAx());
-	LookUpSTORM::inst()->reset();
+	Controller::inst()->renderer().setAxialRange(f.minAx(), f.maxAx());
+	Controller::inst()->reset();
 	return true;
 }
 
@@ -89,18 +91,18 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setLookUpTable__Lja
 	double* data = new double[size];
 	file.read((char*)data, hdr.dataSize);
 	file.close();
-	Fitter& f = LookUpSTORM::inst()->fitter();
+	Fitter& f = Controller::inst()->fitter();
 	if (!f.setLookUpTable(data, size, true, hdr.windowSize, hdr.dLat, hdr.dAx, hdr.rangeLat, hdr.rangeAx))
 		return false;
-	LookUpSTORM::inst()->renderer().setAxialRange(f.minAx(), f.maxAx());
-	LookUpSTORM::inst()->reset();
+	Controller::inst()->renderer().setAxialRange(f.minAx(), f.maxAx());
+	Controller::inst()->reset();
 	return true;
 }
 
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_releaseLookUpTable
 (JNIEnv* env, jobject)
 {
-	Fitter& f = LookUpSTORM::inst()->fitter();
+	Fitter& f = Controller::inst()->fitter();
 	if ((f.lookUpTablePtr() != nullptr) && (_JLookUpTableHelper != nullptr)) {
 		env->ReleasePrimitiveArrayCritical(_JLookUpTableHelper, (void*)f.lookUpTablePtr(), JNI_ABORT);
 		_JLookUpTableHelper = nullptr;
@@ -112,19 +114,19 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_releaseLookUpTable
 JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setEpsilon
 (JNIEnv*, jobject, jdouble eps)
 {
-	LookUpSTORM::inst()->fitter().setEpsilon(eps);
+	Controller::inst()->fitter().setEpsilon(eps);
 }
 
 JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setMaxIter
 (JNIEnv*, jobject, jint maxIter)
 {
-	LookUpSTORM::inst()->fitter().setMaxIter(maxIter);
+	Controller::inst()->fitter().setMaxIter(maxIter);
 }
 
 JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setThreshold
 (JNIEnv*, jobject, jint threshold)
 {
-	LookUpSTORM::inst()->setThreshold(threshold);
+	Controller::inst()->setThreshold(threshold);
 }
 
 JNIEXPORT jobjectArray JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getLocs
@@ -133,7 +135,7 @@ JNIEXPORT jobjectArray JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getLocs
 	// https://gamedev.stackexchange.com/questions/96947/jni-multidimensional-array-as-return-value
 	jobjectArray result;
 
-	std::list<Molecule>& mols = LookUpSTORM::inst()->detectedMolecues();
+	std::list<Molecule>& mols = Controller::inst()->detectedMolecues();
 
 	const jclass doubleArray1DClass = env->FindClass("[D");
 
@@ -151,7 +153,7 @@ JNIEXPORT jobjectArray JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getLocs
 JNIEXPORT jint JNICALL Java_at_fhlinz_imagej_LookUpSTORM_numberOfDetectedLocs
 (JNIEnv*, jobject)
 {
-	return static_cast<jint>(LookUpSTORM::inst()->numberOfDetectedLocs());
+	return static_cast<jint>(Controller::inst()->numberOfDetectedLocs());
 }
 
 JNIEXPORT jobjectArray JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getAllLocs
@@ -160,7 +162,7 @@ JNIEXPORT jobjectArray JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getAllLocs
 	// https://gamedev.stackexchange.com/questions/96947/jni-multidimensional-array-as-return-value
 	jobjectArray result;
 
-	std::list<Molecule>& mols = LookUpSTORM::inst()->allMolecues();
+	std::list<Molecule>& mols = Controller::inst()->allMolecues();
 
 	const jclass doubleArray1DClass = env->FindClass("[D");
 
@@ -178,25 +180,25 @@ JNIEXPORT jobjectArray JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getAllLocs
 JNIEXPORT jint JNICALL Java_at_fhlinz_imagej_LookUpSTORM_numberOfAllLocs
 (JNIEnv*, jobject)
 {
-	return static_cast<jint>(LookUpSTORM::inst()->allMolecues().size());
+	return static_cast<jint>(Controller::inst()->allMolecues().size());
 }
 
 JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setImagePara
 (JNIEnv*, jobject, jint width, jint height)
 {
-	LookUpSTORM::inst()->setImageSize(width, height);
+	Controller::inst()->setImageSize(width, height);
 }
 
 JNIEXPORT jint JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getImageWidth
 (JNIEnv*, jobject)
 {
-	return LookUpSTORM::inst()->imageWidth();
+	return Controller::inst()->imageWidth();
 }
 
 JNIEXPORT jint JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getImageHeight
 (JNIEnv*, jobject)
 {
-	return LookUpSTORM::inst()->imageHeight();
+	return Controller::inst()->imageHeight();
 }
 
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_feedImageData
@@ -207,14 +209,14 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_feedImageData
 	jboolean iscopy = false;
 	jshort* elems = (jshort*)env->GetPrimitiveArrayCritical(jImgArray, &iscopy);
 
-	const int w = LookUpSTORM::inst()->imageWidth();
-	const int h = LookUpSTORM::inst()->imageHeight();
+	const int w = Controller::inst()->imageWidth();
+	const int h = Controller::inst()->imageHeight();
 
 	if (len != (w * h))
 		return 0;
 
 	ImageU16 image(w, h, (uint16_t*)elems, false);
-	LookUpSTORM::inst()->processImage(image, frame);
+	Controller::inst()->processImage(image, frame);
 	
 	env->ReleasePrimitiveArrayCritical(jImgArray, elems, JNI_ABORT);
 
@@ -224,42 +226,42 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_feedImageData
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_isLocFinish
 (JNIEnv*, jobject)
 {
-	return LookUpSTORM::inst()->isLocFinished();
+	return Controller::inst()->isLocFinished();
 }
 
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_isReady
 (JNIEnv*, jobject)
 {
-	return LookUpSTORM::inst()->isReady();
+	return Controller::inst()->isReady();
 }
 
 JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_release
 (JNIEnv*, jobject)
 {
-	LookUpSTORM::inst()->reset();
-	LookUpSTORM::inst()->fitter().release();
-	LookUpSTORM::inst()->renderer().release();
-	LookUpSTORM::release();
+	Controller::inst()->reset();
+	Controller::inst()->fitter().release();
+	Controller::inst()->renderer().release();
+	Controller::release();
 }
 
 JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_reset
 (JNIEnv*, jobject)
 {
-	LookUpSTORM::inst()->reset();
-	LookUpSTORM::inst()->renderer().clear();
+	Controller::inst()->reset();
+	Controller::inst()->renderer().clear();
 }
 
 JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setVerbose
 (JNIEnv*, jobject, jboolean verbose)
 {
-	LookUpSTORM::VERBOSE = verbose;
+	Controller::VERBOSE = verbose;
 }
 
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setRenderImage
 (JNIEnv*env, jobject jobj, jintArray jImgArray, jint rw, jint rh)
 {
-	const int w = LookUpSTORM::inst()->imageWidth();
-	const int h = LookUpSTORM::inst()->imageHeight();
+	const int w = Controller::inst()->imageWidth();
+	const int h = Controller::inst()->imageHeight();
 	const int len = env->GetArrayLength(jImgArray);
 	const int expLen = rw * rh;
 	if (len != expLen) {
@@ -272,14 +274,14 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setRenderImage
 	if (img == nullptr)
 		return 0;
 	_JSMLMImageHelper = jImgArray;
-	LookUpSTORM::inst()->renderer().setRenderImage((uint32_t*)img, rw, rh, double(rw)/w, double(rh)/h);
+	Controller::inst()->renderer().setRenderImage((uint32_t*)img, rw, rh, double(rw)/w, double(rh)/h);
 	return 1;
 }
 
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_releaseRenderImage
 (JNIEnv* env, jobject)
 {
-	Renderer& r = LookUpSTORM::inst()->renderer();
+	Renderer& r = Controller::inst()->renderer();
 	if ((r.renderImagePtr() == nullptr) || (_JSMLMImageHelper == nullptr))
 		return false;
 	env->ReleasePrimitiveArrayCritical(_JSMLMImageHelper, (void*)r.renderImagePtr(), JNI_ABORT);
@@ -290,29 +292,35 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_releaseRenderImage
 JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setRenderSigma
 (JNIEnv*, jobject, jfloat sigma)
 {
-	LookUpSTORM::inst()->renderer().setSigma(sigma);
+	Controller::inst()->renderer().setSigma(sigma);
 }
 
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_isRenderingReady
 (JNIEnv*, jobject)
 {
-	return LookUpSTORM::inst()->isSMLMImageReady();
+	return Controller::inst()->isSMLMImageReady();
 }
 
 JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_clearRenderingReady
 (JNIEnv*, jobject)
 {
-	LookUpSTORM::inst()->clearSMLMImageReady();
+	Controller::inst()->clearSMLMImageReady();
 }
 
 JNIEXPORT jint JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getRenderImageWidth
 (JNIEnv*, jobject)
 {
-	return LookUpSTORM::inst()->renderer().imageWidth();
+	return Controller::inst()->renderer().imageWidth();
 }
 
 JNIEXPORT jint JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getRenderImageHeight
 (JNIEnv*, jobject)
 {
-	return LookUpSTORM::inst()->renderer().imageHeight();
+	return Controller::inst()->renderer().imageHeight();
+}
+
+JNIEXPORT jstring JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getVersion
+(JNIEnv* env, jobject)
+{
+	return env->NewStringUTF("0.1");
 }

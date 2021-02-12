@@ -25,8 +25,10 @@
 
 #include "Matrix.h"
 #include "Vector.h"
+#include "Common.h"
 
-#define NO_LAPACKE
+namespace LookUpSTORM
+{
 
 static constexpr int LIN_SUCCESS = 0;
 static constexpr int LIN_ERR = -2;
@@ -71,6 +73,8 @@ namespace LAPACKE {
 
 };
 #endif // NO_LAPACKE
+
+} // namespace LookUpSTORM
 
 #endif // !LINEAR_MATH_H
 

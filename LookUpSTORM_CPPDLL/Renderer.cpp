@@ -33,6 +33,8 @@
 #include <thread>
 #include <future>
 
+using namespace LookUpSTORM;
+
 Renderer::Renderer()
     : m_corner(0.f)
     , m_cross(0.f)

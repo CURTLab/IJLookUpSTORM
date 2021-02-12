@@ -6,7 +6,6 @@
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="LinearMath.cpp" />
     <ClCompile Include="LocalMaximumSearch.cpp" />
-    <ClCompile Include="LookUpSTORM.cpp" />
     <ClCompile Include="LookUpSTORM_CPPDLL.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="Rect.cpp" />
@@ -54,6 +53,7 @@
     <ClCompile Include="atlas\ATL_dreftrsvUTU.c">
       <Filter>ATLAS</Filter>
     </ClCompile>
+    <ClCompile Include="Controller.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ColorMap.h" />
@@ -62,7 +62,6 @@
     <ClInclude Include="Image.h" />
     <ClInclude Include="LinearMath.h" />
     <ClInclude Include="LocalMaximumSearch.h" />
-    <ClInclude Include="LookUpSTORM.h" />
     <ClInclude Include="LookUpSTORM_CPPDLL.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Rect.h" />
@@ -101,6 +100,7 @@
     <ClInclude Include="atlas\cblas.h">
       <Filter>ATLAS</Filter>
     </ClInclude>
+    <ClInclude Include="Controller.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ATLAS">

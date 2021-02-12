@@ -33,6 +33,9 @@
 #include "LocalMaximumSearch.h"
 #include "LinearMath.h"
 
+namespace LookUpSTORM
+{
+
 class Molecule
 {
 public:
@@ -117,5 +120,7 @@ private:
 	std::atomic<double> m_epsilon;
 	std::atomic<size_t> m_maxIter;
 };
+
+} // namespace LookUpSTORM
 
 #endif // !FITTER_H

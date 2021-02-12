@@ -32,6 +32,9 @@
 
 #include "Common.h"
 
+namespace LookUpSTORM
+{
+
 class MatrixData;
 
 /*
@@ -80,6 +83,8 @@ private:
 
 };
 
-std::ostream& operator<<(std::ostream&, Matrix const&);
+} // namespace LookUpSTORM
+
+std::ostream& operator<<(std::ostream&, LookUpSTORM::Matrix const&);
 
 #endif // MATRIX_H

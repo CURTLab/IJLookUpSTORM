@@ -29,6 +29,8 @@
 
 #include "LocalMaximumSearch.h"
 
+using namespace LookUpSTORM;
+
 LocalMaximumSearch::LocalMaximumSearch(int border, int radius)
     : m_border(border), m_radius(radius)
 {

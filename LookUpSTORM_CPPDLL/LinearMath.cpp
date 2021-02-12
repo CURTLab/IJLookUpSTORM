@@ -85,6 +85,8 @@ void cblas_dtrsv(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
 #include <stdexcept>
 #include <iostream>
 
+using namespace LookUpSTORM;
+
 int BLAS::dsyrk(UPLO_t Uplo, TRANSPOSE_t Trans, double alpha, const Matrix& A, double beta, Matrix& C)
 {
     if (A.isNull() || C.isNull())

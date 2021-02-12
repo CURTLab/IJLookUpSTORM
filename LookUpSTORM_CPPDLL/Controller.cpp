@@ -27,15 +27,19 @@
  *
  ****************************************************************************/
 
-#include "LookUpSTORM.h"
+#include "Controller.h"
 
 #include <chrono>
 #include <iostream>
 
-LookUpSTORM* LookUpSTORM::LOOKUPSTORM_INSTANCE = nullptr;
-bool LookUpSTORM::VERBOSE = false;
+using namespace LookUpSTORM;
 
-LookUpSTORM::LookUpSTORM()
+#ifdef CONTROLLER_STATIC
+Controller* Controller::LOOKUPSTORM_INSTANCE = nullptr;
+bool Controller::VERBOSE = false;
+#endif // CONTROLLER_STATIC
+
+Controller::Controller()
     : m_isLocFinished(false)
     , m_isSMLMImageReady(false)
     , m_nms(1, 6)
@@ -46,44 +50,50 @@ LookUpSTORM::LookUpSTORM()
     m_numberOfDetectedLocs.store(0);
 }
 
-LookUpSTORM* LookUpSTORM::inst()
+Controller* Controller::inst()
 {
     if (LOOKUPSTORM_INSTANCE == nullptr)
-        LOOKUPSTORM_INSTANCE = new LookUpSTORM;
+        LOOKUPSTORM_INSTANCE = new Controller;
     return LOOKUPSTORM_INSTANCE;
 }
 
-void LookUpSTORM::release()
+#ifdef CONTROLLER_STATIC
+void Controller::release()
 {
     delete LOOKUPSTORM_INSTANCE;
     LOOKUPSTORM_INSTANCE = nullptr;
 }
+#else
+LookUpSTORM::Controller::~Controller()
+{
+}
+#endif // CONTROLLER_STATIC
 
-bool LookUpSTORM::isReady() const
+bool Controller::isReady() const
 {
     return m_renderer.isReady() && m_fitter.isReady() && (m_imageWidth > 0) && (m_imageHeight > 0);
 }
 
-bool LookUpSTORM::isLocFinished() const
+bool Controller::isLocFinished() const
 {
     return m_isLocFinished.load();
 }
 
-bool LookUpSTORM::isSMLMImageReady() const
+bool Controller::isSMLMImageReady() const
 {
     return m_isSMLMImageReady.load();
 }
 
-void LookUpSTORM::clearSMLMImageReady()
+void Controller::clearSMLMImageReady()
 {
     m_isSMLMImageReady.store(false);
 }
 
-void LookUpSTORM::processImage(ImageU16 image, int frame)
+void Controller::processImage(ImageU16 image, int frame)
 {
     //while (!m_isLocFinished.load()) {}
     if (!isReady()) {
-        if (LookUpSTORM::VERBOSE)
+        if (Controller::VERBOSE)
             std::cerr << "LookUpSTORM: Image processor is not ready!";
         return;
     }
@@ -145,7 +155,7 @@ void LookUpSTORM::processImage(ImageU16 image, int frame)
     }
     const auto t1 = std::chrono::high_resolution_clock::now();
 
-    if (LookUpSTORM::VERBOSE)
+    if (Controller::VERBOSE)
         std::cout << "Fitted " << m_detectedMolecues.size() << " emitter of frame " << frame << " in " << std::chrono::duration<double, std::milli>(t1 - t0).count() << " ms" << std::endl;
 
     if (!m_isSMLMImageReady && (changedRegion.area() > 25) && (frame > 1) && (frame % 5 == 0)) {
@@ -158,58 +168,58 @@ void LookUpSTORM::processImage(ImageU16 image, int frame)
     m_isLocFinished.store(true);
 }
 
-void LookUpSTORM::setImageSize(int width, int height)
+void Controller::setImageSize(int width, int height)
 {
     m_imageWidth = width;
     m_imageHeight = height;
 }
 
-int LookUpSTORM::imageWidth() const
+int Controller::imageWidth() const
 {
     return m_imageWidth;
 }
 
-int LookUpSTORM::imageHeight() const
+int Controller::imageHeight() const
 {
     return m_imageHeight;
 }
 
-void LookUpSTORM::setThreshold(uint16_t threshold)
+void Controller::setThreshold(uint16_t threshold)
 {
     m_threshold.store(threshold);
 }
 
-uint16_t LookUpSTORM::threshold() const
+uint16_t Controller::threshold() const
 {
     return m_threshold.load();
 }
 
-std::list<Molecule>& LookUpSTORM::detectedMolecues()
+std::list<Molecule>& Controller::detectedMolecues()
 {
     return m_detectedMolecues;
 }
 
-std::list<Molecule>& LookUpSTORM::allMolecues()
+std::list<Molecule>& Controller::allMolecues()
 {
     return m_mols;
 }
 
-int32_t LookUpSTORM::numberOfDetectedLocs()
+int32_t Controller::numberOfDetectedLocs()
 {
     return m_numberOfDetectedLocs.load();
 }
 
-Fitter& LookUpSTORM::fitter()
+Fitter& Controller::fitter()
 {
     return m_fitter;
 }
 
-Renderer& LookUpSTORM::renderer()
+Renderer& Controller::renderer()
 {
     return m_renderer;
 }
 
-void LookUpSTORM::setRenderScale(double scale)
+void Controller::setRenderScale(double scale)
 {
     m_renderer.setSize(
         (int)std::ceil(m_imageWidth * scale),
@@ -217,14 +227,14 @@ void LookUpSTORM::setRenderScale(double scale)
         scale, scale);
 }
 
-void LookUpSTORM::setRenderSize(int width, int height)
+void Controller::setRenderSize(int width, int height)
 {
     m_renderer.setSize(width, height,
         double(width) / m_imageWidth, 
         double(height) / m_imageHeight);
 }
 
-ImageU32 LookUpSTORM::renderSMLMImage()
+ImageU32 Controller::renderSMLMImage()
 {
     m_isSMLMImageReady.store(false);
     auto ret = m_renderer.render();
@@ -232,7 +242,7 @@ ImageU32 LookUpSTORM::renderSMLMImage()
     return ret;
 }
 
-void LookUpSTORM::reset()
+void Controller::reset()
 {
     m_isLocFinished.store(false);
     m_isSMLMImageReady.store(false);

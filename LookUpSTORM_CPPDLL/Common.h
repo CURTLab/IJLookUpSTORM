@@ -37,6 +37,13 @@
 #undef min
 #undef max
 
+#define NO_LAPACKE
+// #define USE_MKL
+#define CONTROLLER_STATIC
+
+namespace LookUpSTORM
+{
+
 template<typename T>
 static inline T constexpr sqr(const T& x) { return x * x; }
 
@@ -51,5 +58,7 @@ enum class Initialization {
     Uninitialized
 };
 static constexpr Initialization Uninitialized = Initialization::Uninitialized;
+
+} // namespace LookUpSTORM
 
 #endif // !COMMON_H

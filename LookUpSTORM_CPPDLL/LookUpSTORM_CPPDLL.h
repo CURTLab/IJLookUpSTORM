@@ -215,6 +215,14 @@ JNIEXPORT jint JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getRenderImageWidth
 JNIEXPORT jint JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getRenderImageHeight
   (JNIEnv *, jobject);
 
+/*
+ * Class:     at_fhlinz_imagej_LookUpSTORM
+ * Method:    getVersion
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getVersion
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

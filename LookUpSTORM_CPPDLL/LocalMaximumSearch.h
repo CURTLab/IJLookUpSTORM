@@ -33,6 +33,9 @@
 #include <list>
 #include "Image.h"
 
+namespace LookUpSTORM
+{
+
 struct LocalMaximum {
 	uint16_t val;
 	uint16_t localBg;
@@ -57,5 +60,7 @@ private:
 	int m_radius;
 
 };
+
+} // namespace LookUpSTORM
 
 #endif // !LOCALMAXIMUMSEARCH_H

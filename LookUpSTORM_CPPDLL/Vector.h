@@ -32,6 +32,9 @@
 
 #include "Common.h"
 
+namespace LookUpSTORM
+{
+
 class VectorData;
 
 /*
@@ -80,7 +83,9 @@ private:
 
 };
 
-std::ostream& operator<<(std::ostream&, Vector const&);
+} // namespace LookUpSTORM
+
+std::ostream& operator<<(std::ostream&, LookUpSTORM::Vector const&);
 
 #endif // !VECTOR_H
 

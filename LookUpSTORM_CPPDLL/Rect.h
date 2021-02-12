@@ -32,6 +32,9 @@
 
 #include "Common.h"
 
+namespace LookUpSTORM
+{
+
 /*
  * rectange class inspired by the QT QRect interface
  */
@@ -93,6 +96,8 @@ private:
 
 };
 
-std::ostream& operator<<(std::ostream&, Rect const&);
+} // namespace LookUpSTORM
+
+std::ostream& operator<<(std::ostream&, LookUpSTORM::Rect const&);
 
 #endif // !RECT_H

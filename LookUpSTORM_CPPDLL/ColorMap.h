@@ -33,6 +33,9 @@
 #include <tuple>
 #include <vector>
 
+namespace LookUpSTORM
+{ 
+
 class ColorMap
 {
 public:
@@ -51,5 +54,7 @@ private:
 	double m_step;
 
 };
+
+} // namespace LookUpSTORM
 
 #endif // !COLORMAP_H

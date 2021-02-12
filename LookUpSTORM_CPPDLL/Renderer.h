@@ -34,6 +34,9 @@
 #include "ColorMap.h"
 #include <mutex>
 
+namespace LookUpSTORM
+{
+
 class Renderer
 {
 public:
@@ -82,6 +85,8 @@ private:
 	std::mutex m_mutex;
 
 };
+
+} // namespace LookUpSTORM
 
 #endif // !RENDERER_H
 

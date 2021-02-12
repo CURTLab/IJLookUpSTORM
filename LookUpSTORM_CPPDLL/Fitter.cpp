@@ -26,6 +26,8 @@
 
 #include <iostream>
 
+using namespace LookUpSTORM;
+
 Fitter::Fitter()
     : m_lookup(nullptr)
 	, m_tableAllocated(false)

@@ -31,6 +31,8 @@
 
 #include "Common.h"
 
+using namespace LookUpSTORM;
+
 inline constexpr uint32_t boundRGB(double red, double green, double blue)
 {
     const int r = bound<int>(red * 255, 0, 255);

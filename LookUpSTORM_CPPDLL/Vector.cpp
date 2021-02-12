@@ -35,6 +35,9 @@
 #include <iostream>
 #include <iomanip>
 
+namespace LookUpSTORM
+{
+
 class VectorData
 {
 public:
@@ -52,6 +55,10 @@ public:
     bool owner;
     double* data;
 };
+
+} // namespace LookUpSTORM
+
+using namespace LookUpSTORM;
 
 Vector::Vector() noexcept
     : d(nullptr)

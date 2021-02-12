@@ -36,6 +36,9 @@
 #include <iomanip>
 #include <numeric>
 
+namespace LookUpSTORM
+{
+
 class MatrixData
 {
 public:
@@ -70,6 +73,10 @@ public:
     bool owner;
     double* data;
 };
+
+} //  namespace LookUpSTORM
+
+using namespace LookUpSTORM;
 
 Matrix::Matrix() noexcept
     : d(nullptr)

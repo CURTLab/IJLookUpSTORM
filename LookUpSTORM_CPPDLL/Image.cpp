@@ -31,6 +31,9 @@
 
 #include <atomic>
 
+namespace LookUpSTORM
+{
+
 template<class T>
 class ImageData
 {
@@ -78,6 +81,10 @@ public:
 
     static auto constexpr bytes_pixel = sizeof(T);
 };
+
+} // namespace LookUpSTORM
+
+using namespace LookUpSTORM;
 
 template<class T>
 Image<T>::Image() : d(nullptr)

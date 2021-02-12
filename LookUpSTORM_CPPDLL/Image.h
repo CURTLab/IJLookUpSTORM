@@ -33,6 +33,9 @@
 #include <cstdint>
 #include "Rect.h"
 
+namespace LookUpSTORM
+{
+
 template<class T>
 class ImageData;
 
@@ -93,5 +96,7 @@ HANDLE(uint16_t,U16)
 HANDLE(uint32_t, U32)
 HANDLE(float, F32)
 HANDLE(double, F64)
+
+} // namespace LookUpSTORM
 
 #endif // !IMAGE_H
