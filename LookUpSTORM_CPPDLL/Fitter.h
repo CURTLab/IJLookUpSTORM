@@ -49,7 +49,7 @@ public:
 			double y;
 			double z;
 			double frame;
-			double time;
+			double time_us;
 		};
 		double data[7];
 	};

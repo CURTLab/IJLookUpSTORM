@@ -125,6 +125,7 @@ bool Controller::processImage(ImageU16 image, int frame)
         m.x = f.x;
         m.y = f.y;
         m.z = 0.0;
+        m.frame = frame;
 
         Rect region(int(f.x) - winSize / 2, int(f.y) - winSize/2, winSize, winSize);
         if (!region.moveInside(bounds)) {
@@ -137,7 +138,7 @@ bool Controller::processImage(ImageU16 image, int frame)
         const bool success = m_fitter.fitSingle(roi, m);
         auto t_end = std::chrono::high_resolution_clock::now();
 
-        m.time = std::chrono::duration<double, std::micro>(t_end - t_start).count();
+        m.time_us = std::chrono::duration<double, std::micro>(t_end - t_start).count();
 
         if (success) {
             if (m.peak < threshold)
@@ -161,7 +162,7 @@ bool Controller::processImage(ImageU16 image, int frame)
     }
 
     // update SMLM image
-    if (!m_isSMLMImageReady && (changedRegion.area() > 25) && (frame > 1) && (frame % updateRate == 0)) {
+    if (!m_isSMLMImageReady && ((updateRate <= 1) || ((changedRegion.area() > 25) && (frame > 1) && (frame % updateRate == 0)))) {
         m_renderer.updateImage();
         changedRegion = {};
         m_isSMLMImageReady = true;
