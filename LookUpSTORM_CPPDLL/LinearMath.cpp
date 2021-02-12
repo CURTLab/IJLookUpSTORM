@@ -29,7 +29,7 @@
 
 #include "LinearMath.h"
 
-#ifdef USE_MKL
+#ifdef USE_MKL_LUT
 #include <mkl_cblas.h>
 #include <mkl_lapacke.h>
 #define INT MKL_INT
@@ -80,7 +80,7 @@ void cblas_dtrsv(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
     }
 } // extern "C"
 }
-#endif // USE_MKL
+#endif // USE_MKL_LUT
 
 #include <stdexcept>
 #include <iostream>
@@ -131,7 +131,7 @@ int BLAS::dtrsv(UPLO_t Uplo, TRANSPOSE_t Trans, DIAG_t Diag, const Matrix& A, Ve
     return LIN_SUCCESS;
 }
 
-#ifndef NO_LAPACKE
+#ifndef NO_LAPACKE_LUT
 int LAPACKE::dsysv(UPLO_t uplo, Matrix& A, int* ipiv, Vector& b)
 {
     if (A.isNull() || b.isNull())

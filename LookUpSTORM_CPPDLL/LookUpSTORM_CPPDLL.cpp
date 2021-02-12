@@ -26,6 +26,9 @@
  * SOFTWARE.
  *
  ****************************************************************************/
+#include "Common.h"
+
+#ifdef JNI_EXPORT_LUT
 
 #include "LookUpSTORM_CPPDLL.h"
 #include "Controller.h"
@@ -254,7 +257,7 @@ JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_reset
 JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setVerbose
 (JNIEnv*, jobject, jboolean verbose)
 {
-	Controller::VERBOSE = verbose;
+	Controller::inst()->setVerbose(verbose);
 }
 
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setRenderImage
@@ -324,3 +327,5 @@ JNIEXPORT jstring JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getVersion
 {
 	return env->NewStringUTF("0.1");
 }
+
+#endif // JNI_EXPORT

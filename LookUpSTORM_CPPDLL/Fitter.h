@@ -55,7 +55,7 @@ public:
 	};
 };
 
-class Fitter
+class DLL_DEF_LUT Fitter
 {
 public:
 	Fitter();

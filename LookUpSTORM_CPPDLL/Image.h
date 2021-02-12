@@ -47,7 +47,7 @@ class Image;
  * Template based image class with copy-on-write mechanics
  */
 template<class T>
-class Image
+class DLL_DEF_LUT Image
 {
 public:
 	Image();

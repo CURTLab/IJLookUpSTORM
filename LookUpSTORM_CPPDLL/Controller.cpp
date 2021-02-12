@@ -34,9 +34,8 @@
 
 using namespace LookUpSTORM;
 
-#ifdef CONTROLLER_STATIC
+#ifdef JNI_EXPORT_LUT
 Controller* Controller::LOOKUPSTORM_INSTANCE = nullptr;
-bool Controller::VERBOSE = false;
 #endif // CONTROLLER_STATIC
 
 Controller::Controller()
@@ -46,10 +45,15 @@ Controller::Controller()
     , m_imageWidth(0)
     , m_imageHeight(0)
     , m_threshold(0)
+    , m_frameFittingTimeMS(0.0)
+    , m_renderUpdateRate(5)
+    , m_timeoutMS(250.0)
+    , m_verbose(false)
 {
     m_numberOfDetectedLocs.store(0);
 }
 
+#ifdef JNI_EXPORT_LUT
 Controller* Controller::inst()
 {
     if (LOOKUPSTORM_INSTANCE == nullptr)
@@ -57,7 +61,6 @@ Controller* Controller::inst()
     return LOOKUPSTORM_INSTANCE;
 }
 
-#ifdef CONTROLLER_STATIC
 void Controller::release()
 {
     delete LOOKUPSTORM_INSTANCE;
@@ -89,13 +92,13 @@ void Controller::clearSMLMImageReady()
     m_isSMLMImageReady.store(false);
 }
 
-void Controller::processImage(ImageU16 image, int frame)
+bool Controller::processImage(ImageU16 image, int frame)
 {
-    //while (!m_isLocFinished.load()) {}
+    const bool verbose = m_verbose.load();
     if (!isReady()) {
-        if (Controller::VERBOSE)
-            std::cerr << "LookUpSTORM: Image processor is not ready!";
-        return;
+        if (verbose)
+            std::cerr << "LookUpSTORM: Image processor is not ready!" << std::endl;
+        return false;
     }
 
     m_isLocFinished.store(false);
@@ -106,6 +109,8 @@ void Controller::processImage(ImageU16 image, int frame)
     m_nms.setBorder(winSize / 2);
 
     const uint16_t threshold = m_threshold.load();
+    const int updateRate = m_renderUpdateRate.load();
+    const double timeoutMS = m_timeoutMS.load();
 
     auto features = m_nms.find(image, m_threshold);
     Molecule m;
@@ -114,7 +119,6 @@ void Controller::processImage(ImageU16 image, int frame)
     m_detectedMolecues.clear();
     //std::cout << "Features: " << features.size() << std::endl;
     for (const auto& f : features) {
-
         auto t_start = std::chrono::high_resolution_clock::now();
         m.peak = std::max(0.0, double(f.val) - f.localBg);
         m.background = f.localBg;
@@ -122,15 +126,11 @@ void Controller::processImage(ImageU16 image, int frame)
         m.y = f.y;
         m.z = 0.0;
 
-        //std::cout << "Feature: " << f.x << ", " << f.y << std::endl;
-
         Rect region(int(f.x) - winSize / 2, int(f.y) - winSize/2, winSize, winSize);
         if (!region.moveInside(bounds)) {
-            std::cout << "LookUpSTORM: Impossible ROI!";
+            std::cerr << "LookUpSTORM: Impossible ROI!" << std::endl;
             continue;
         }
-
-        //std::cout << "ROI: " << region.x() << ", " << region.y() << " " << region.width() << "x" << region.height() << std::endl;
 
         ImageU16 roi = image.subImage(region);
 
@@ -152,20 +152,30 @@ void Controller::processImage(ImageU16 image, int frame)
             m_detectedMolecues.push_back(m);
             m_mols.push_back(m);
         }
+
+        const auto t = std::chrono::high_resolution_clock::now();
+        if (std::chrono::duration<double, std::milli>(t - t0).count() > timeoutMS) {
+            std::cerr << "LookUpSTORM: Timeout!" << std::endl;
+            return false;
+        }
     }
-    const auto t1 = std::chrono::high_resolution_clock::now();
 
-    if (Controller::VERBOSE)
-        std::cout << "Fitted " << m_detectedMolecues.size() << " emitter of frame " << frame << " in " << std::chrono::duration<double, std::milli>(t1 - t0).count() << " ms" << std::endl;
-
-    if (!m_isSMLMImageReady && (changedRegion.area() > 25) && (frame > 1) && (frame % 5 == 0)) {
+    // update SMLM image
+    if (!m_isSMLMImageReady && (changedRegion.area() > 25) && (frame > 1) && (frame % updateRate == 0)) {
         m_renderer.updateImage();
         changedRegion = {};
         m_isSMLMImageReady = true;
     }
 
+    const auto t1 = std::chrono::high_resolution_clock::now();
+    m_frameFittingTimeMS.store(std::chrono::duration<double, std::milli>(t1 - t0).count());
+
+    if (verbose)
+        std::cout << "Fitted " << m_detectedMolecues.size() << " emitter of frame " << frame << " in " << m_frameFittingTimeMS << " ms" << std::endl;
+
     m_numberOfDetectedLocs.store(static_cast<uint16_t>(m_detectedMolecues.size()));
     m_isLocFinished.store(true);
+    return true;
 }
 
 void Controller::setImageSize(int width, int height)
@@ -194,6 +204,36 @@ uint16_t Controller::threshold() const
     return m_threshold.load();
 }
 
+void LookUpSTORM::Controller::setVerbose(bool verbose)
+{
+    m_verbose.store(verbose);
+}
+
+bool LookUpSTORM::Controller::isVerbose() const
+{
+    return m_verbose.load();
+}
+
+void LookUpSTORM::Controller::setFrameRenderUpdateRate(int rate)
+{
+    m_renderUpdateRate.store(rate);
+}
+
+int LookUpSTORM::Controller::frameRenderUpdateRate() const
+{
+    return m_renderUpdateRate.load();
+}
+
+void LookUpSTORM::Controller::setTimeoutMS(double timeoutMS)
+{
+    m_timeoutMS.store(timeoutMS);
+}
+
+double LookUpSTORM::Controller::timeoutMS() const
+{
+    return m_timeoutMS.load();
+}
+
 std::list<Molecule>& Controller::detectedMolecues()
 {
     return m_detectedMolecues;
@@ -212,6 +252,11 @@ int32_t Controller::numberOfDetectedLocs()
 Fitter& Controller::fitter()
 {
     return m_fitter;
+}
+
+double LookUpSTORM::Controller::frameFittingTimeMS() const
+{
+    return m_frameFittingTimeMS.load();
 }
 
 Renderer& Controller::renderer()

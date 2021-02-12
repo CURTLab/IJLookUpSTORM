@@ -62,7 +62,7 @@ namespace BLAS {
               DIAG_t Diag, const Matrix& A, Vector& X);
 };
 
-#ifndef NO_LAPACKE
+#ifndef NO_LAPACKE_LUT
 namespace LAPACKE {
     enum UPLO_t : char {
         U = 'U',

@@ -37,7 +37,7 @@
 namespace LookUpSTORM
 {
 
-class Renderer
+class DLL_DEF_LUT Renderer
 {
 public:
 	Renderer();

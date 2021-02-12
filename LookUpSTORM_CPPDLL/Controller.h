@@ -37,15 +37,14 @@
 namespace LookUpSTORM
 {
 
-class Controller
+class DLL_DEF_LUT Controller
 {
 public:
-#ifdef CONTROLLER_STATIC
+#ifdef JNI_EXPORT_LUT
 	static Controller* inst();
 	static void release();
-	static bool VERBOSE;
 #else
-	void ~Controller();
+	virtual ~Controller();
 #endif
 
 	bool isReady() const;
@@ -58,7 +57,7 @@ public:
 
 	void clearSMLMImageReady();
 
-	void processImage(ImageU16 image, int frame);
+	bool processImage(ImageU16 image, int frame);
 
 	void setImageSize(int width, int height);
 	int imageWidth() const;
@@ -69,6 +68,21 @@ public:
 	// thread-safe
 	uint16_t threshold() const;
 
+	// thread-safe
+	void setVerbose(bool verbose);
+	// thread-safe
+	bool isVerbose() const;
+
+	// thread-safe
+	void setFrameRenderUpdateRate(int rate);
+	// thread-safe
+	int frameRenderUpdateRate() const;
+
+	// thread-safe
+	void setTimeoutMS(double timeoutMS);
+	// thread-safe
+	double timeoutMS() const;
+
 	Fitter& fitter();
 	// get detected localization from the last processImage call
 	std::list<Molecule>& detectedMolecues();
@@ -78,6 +92,10 @@ public:
 	// thread-safe
 	int32_t numberOfDetectedLocs();
 
+	// get the time needed to fit a frame provieded by processImage in ms
+	// thread-safe
+	double frameFittingTimeMS() const;
+
 	Renderer& renderer();
 	void setRenderScale(double scale);
 	void setRenderSize(int width, int height);
@@ -85,13 +103,13 @@ public:
 
 	void reset();
 
-#ifdef CONTROLLER_STATIC
+#ifdef JNI_EXPORT_LUT
 private:
 #endif // CONTROLLER_STATIC
 	Controller();
 
 private:
-#ifdef CONTROLLER_STATIC
+#ifdef JNI_EXPORT_LUT
 	static Controller* LOOKUPSTORM_INSTANCE;
 #endif // CONTROLLER_STATIC
 
@@ -104,8 +122,12 @@ private:
 	Fitter m_fitter;
 	std::list<Molecule> m_detectedMolecues;
 	std::atomic<int32_t> m_numberOfDetectedLocs;
+	std::atomic<double> m_frameFittingTimeMS;
+	std::atomic<int> m_renderUpdateRate;
+	std::atomic<double> m_timeoutMS;
 	std::list<Molecule> m_mols;
 	Renderer m_renderer;
+	std::atomic<bool> m_verbose;
 
 };
 

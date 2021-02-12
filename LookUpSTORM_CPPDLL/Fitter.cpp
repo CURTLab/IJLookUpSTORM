@@ -125,14 +125,14 @@ bool Fitter::fitSingle(const ImageU16& roi, Molecule& mol)
 		//if (BLAS::dgemm(BLAS::CblasTrans, BLAS::CblasNoTrans, 1.0, m_J, m_J, 0.0, m_JTJ) != LIN_SUCCESS) break;
 		if (BLAS::dsyrk(BLAS::CblasUpper, BLAS::CblasTrans, 1.0, m_J, 0.0, m_JTJ) != LIN_SUCCESS) break;
 
-#ifdef NO_LAPACKE
+#ifdef NO_LAPACKE_LUT
 		if (BLAS::dtrsv(BLAS::CblasUpper, BLAS::CblasTrans, BLAS::CblasNonUnit, m_JTJ, m_x1) != LIN_SUCCESS)
 			break;
 #else
 		int ipiv[5];
 		if (LAPACKE::dsysv(LAPACKE::U, m_JTJ, ipiv, m_x1) != 0)
 			break;
-#endif // NO_LAPACKE
+#endif // NO_LAPACKE_LUT
 
 		/*double delta = 0.0;
 		for (int i = 0; i < 5; ++i)

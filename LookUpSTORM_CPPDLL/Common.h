@@ -37,9 +37,19 @@
 #undef min
 #undef max
 
-#define NO_LAPACKE
-// #define USE_MKL
-#define CONTROLLER_STATIC
+#define NO_LAPACKE_LUT
+// #define USE_MKL_LUT
+#define JNI_EXPORT_LUT
+//#define DLL_EXPORT_LUT
+
+#if !defined(JNI_EXPORT_LUT) && defined(DLL_EXPORT_LUT)
+#define DLL_DEF_LUT __declspec(dllexport)
+#elif !defined(JNI_EXPORT_LUT) && defined(DLL_IMPORT_LUT) 
+#define DLL_DEF_LUT __declspec(dllimport)
+#else
+#define DLL_DEF_LUT
+#endif // DLL_EXPORT
+
 
 namespace LookUpSTORM
 {
