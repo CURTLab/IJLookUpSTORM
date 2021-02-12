@@ -48,6 +48,7 @@ Controller::Controller()
     , m_frameFittingTimeMS(0.0)
     , m_renderUpdateRate(5)
     , m_timeoutMS(250.0)
+    , m_enableRendering(true)
     , m_verbose(false)
 {
     m_numberOfDetectedLocs.store(0);
@@ -160,16 +161,20 @@ bool Controller::processImage(ImageU16 image, int frame)
             return false;
         }
     }
+    const auto t1 = std::chrono::high_resolution_clock::now();
 
     // update SMLM image
-    if (!m_isSMLMImageReady && ((updateRate <= 1) || ((changedRegion.area() > 25) && (frame > 1) && (frame % updateRate == 0)))) {
+    if (!m_isSMLMImageReady && m_enableRendering.load() && ((updateRate <= 1) || ((changedRegion.area() > 25) && (frame > 1) && (frame % updateRate == 0)))) {
         m_renderer.updateImage();
         changedRegion = {};
         m_isSMLMImageReady = true;
     }
 
-    const auto t1 = std::chrono::high_resolution_clock::now();
+    const auto t2 = std::chrono::high_resolution_clock::now();
+
     m_frameFittingTimeMS.store(std::chrono::duration<double, std::milli>(t1 - t0).count());
+    m_renderTimeMS.store(std::chrono::duration<double, std::milli>(t2 - t1).count());
+
 
     if (verbose)
         std::cout << "Fitted " << m_detectedMolecues.size() << " emitter of frame " << frame << " in " << m_frameFittingTimeMS << " ms" << std::endl;
@@ -258,6 +263,21 @@ Fitter& Controller::fitter()
 double LookUpSTORM::Controller::frameFittingTimeMS() const
 {
     return m_frameFittingTimeMS.load();
+}
+
+double LookUpSTORM::Controller::renderTimeMS() const
+{
+    return m_renderTimeMS.load();
+}
+
+void LookUpSTORM::Controller::setRenderingEnabled(bool enabled)
+{
+    m_enableRendering.store(enabled);
+}
+
+bool LookUpSTORM::Controller::isRenderingEnabled() const
+{
+    return m_enableRendering.load();
 }
 
 Renderer& Controller::renderer()

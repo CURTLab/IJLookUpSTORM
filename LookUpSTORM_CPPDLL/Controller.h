@@ -96,6 +96,15 @@ public:
 	// thread-safe
 	double frameFittingTimeMS() const;
 
+	// get the time needed to render a SMLM image provieded by processImage in ms
+	// thread-safe
+	double renderTimeMS() const;
+
+	// thread-safe
+	void setRenderingEnabled(bool enabled);
+	// thread-safe
+	bool isRenderingEnabled() const;
+
 	Renderer& renderer();
 	void setRenderScale(double scale);
 	void setRenderSize(int width, int height);
@@ -122,7 +131,9 @@ private:
 	std::list<Molecule> m_detectedMolecues;
 	std::atomic<int32_t> m_numberOfDetectedLocs;
 	std::atomic<double> m_frameFittingTimeMS;
+	std::atomic<double> m_renderTimeMS;
 	std::atomic<int> m_renderUpdateRate;
+	std::atomic<bool> m_enableRendering;
 	std::atomic<double> m_timeoutMS;
 	std::list<Molecule> m_mols;
 	Renderer m_renderer;

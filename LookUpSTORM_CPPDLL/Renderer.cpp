@@ -40,7 +40,6 @@ Renderer::Renderer()
     , m_cross(0.f)
     , m_scaleX(1.)
     , m_scaleY(1.)
-    , m_enableRendering(true)
 {
 }
 
@@ -50,7 +49,6 @@ Renderer::Renderer(int width, int height, double scaleX, double scaleY)
     , m_cross(0.f)
     , m_scaleX(scaleX)
     , m_scaleY(scaleY)
-    , m_enableRendering(true)
 {
 }
 
@@ -134,7 +132,7 @@ void Renderer::setRenderImage(uint32_t* imagePtr, int width, int height, double 
 
 bool Renderer::updateImage(Rect region)
 {
-    if (m_renderImage.isNull() || (!m_enableRendering.load()))
+    if (m_renderImage.isNull())
         return false;
     
     if (region.isNull()) {
@@ -165,16 +163,6 @@ void Renderer::clear()
 const ImageF32& Renderer::rawImage() const
 {
     return m_image;
-}
-
-void LookUpSTORM::Renderer::setRenderingEnabled(bool enabled)
-{
-    m_enableRendering.store(enabled);
-}
-
-bool LookUpSTORM::Renderer::isRenderingEnabled() const
-{
-    return m_enableRendering.load();
 }
 
 void Renderer::render(Rect roi)

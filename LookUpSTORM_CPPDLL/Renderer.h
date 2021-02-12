@@ -69,11 +69,6 @@ public:
 
 	const ImageF32 &rawImage() const;
 
-	// thread-safe
-	void setRenderingEnabled(bool enabled);
-	// thread-safe
-	bool isRenderingEnabled() const;
-
 private:
 	void render(Rect roi);
 	void renderTile(const Rect& tile);
@@ -90,7 +85,6 @@ private:
 	ColorMap m_colorLUT;
 	ColorMap m_colorCornerLUT;
 	ColorMap m_colorCrossLUT;
-	std::atomic<bool> m_enableRendering;
 
 };
 
