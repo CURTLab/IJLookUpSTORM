@@ -31,17 +31,19 @@
 #define RENDERER_H
 
 #include "Image.h"
-#include "ColorMap.h"
 #include <mutex>
 
 namespace LookUpSTORM
 {
 
-class DLL_DEF_LUT Renderer
+class RendererPrivate;
+
+class DLL_DEF_LUT Renderer final
 {
 public:
 	Renderer();
 	Renderer(int width, int height, double scaleX, double scaleY);
+	~Renderer();
 
 	void release();
 
@@ -70,21 +72,7 @@ public:
 	const ImageF32 &rawImage() const;
 
 private:
-	void render(Rect roi);
-	void renderTile(const Rect& tile);
-	uint32_t pixelCached(int x, int y) const;
-
-	ImageF32 m_image;
-	ImageU32 m_renderImage;
-
-	float m_corner;
-	float m_cross;
-	double m_scaleX;
-	double m_scaleY;
-	std::mutex m_mutex;
-	ColorMap m_colorLUT;
-	ColorMap m_colorCornerLUT;
-	ColorMap m_colorCrossLUT;
+	RendererPrivate* const d;
 
 };
 

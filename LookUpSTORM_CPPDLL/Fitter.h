@@ -30,8 +30,7 @@
 #ifndef FITTER_H
 #define FITTER_H
 
-#include "LocalMaximumSearch.h"
-#include "LinearMath.h"
+#include "Image.h"
 
 namespace LookUpSTORM
 {
@@ -55,7 +54,9 @@ public:
 	};
 };
 
-class DLL_DEF_LUT Fitter
+class FitterPrivate;
+
+class DLL_DEF_LUT Fitter final
 {
 public:
 	Fitter();
@@ -95,30 +96,7 @@ public:
 	size_t maxIter() const;
 
 private:
-	size_t lookupIndex(double x, double y, double z) const;
-	const double* get(double x, double y, double z) const;
-
-	const double* m_lookup;
-	bool m_tableAllocated;
-	size_t m_countLat;
-	size_t m_countAx;
-	size_t m_countIndex;
-	size_t m_winSize;
-	size_t m_stride;
-	double m_dLat;
-	double m_dAx;
-	double m_minLat;
-	double m_maxLat;
-	double m_minAx;
-	double m_maxAx;
-
-	// Gauss-Newton algorithm variables
-	Vector m_x0;
-	Vector m_x1;
-	Matrix m_J;
-	Matrix m_JTJ;
-	std::atomic<double> m_epsilon;
-	std::atomic<size_t> m_maxIter;
+	FitterPrivate * const d;
 };
 
 } // namespace LookUpSTORM

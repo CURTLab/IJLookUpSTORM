@@ -23,80 +23,148 @@
 #include "Fitter.h"
 
 #include "Common.h"
+#include "LocalMaximumSearch.h"
+#include "LinearMath.h"
 
 #include <iostream>
 
+namespace LookUpSTORM
+{
+
+class FitterPrivate
+{
+public:
+	inline FitterPrivate()
+		: lookup(nullptr)
+		, tableAllocated(false)
+		, countLat(0)
+		, countAx(0)
+		, countIndex(0)
+		, winSize(0)
+		, stride(0)
+		, dLat(0.0)
+		, dAx(0.0)
+		, minLat(0.0)
+		, maxLat(0.0)
+		, minAx(0.0)
+		, maxAx(0)
+		, x0(5, Uninitialized)
+		, x1(5, Uninitialized)
+		, JTJ(5, 5, Uninitialized)
+		, epsilon(1E-2)
+		, maxIter(5)
+	{}
+
+	size_t lookupIndex(double x, double y, double z) const;
+	const double* get(double x, double y, double z) const;
+
+	inline constexpr bool isValid(double x, double y, double z) const
+	{
+		return ((x >= minLat) && (x <= maxLat) && (y >= minLat) && (y <= maxLat) && (z >= minAx) && (z <= maxAx));
+	}
+
+	const double* lookup;
+	bool tableAllocated;
+	size_t countLat;
+	size_t countAx;
+	size_t countIndex;
+	size_t winSize;
+	size_t stride;
+	double dLat;
+	double dAx;
+	double minLat;
+	double maxLat;
+	double minAx;
+	double maxAx;
+
+	// Gauss-Newton algorithm variables
+	Vector x0;
+	Vector x1;
+	Matrix J;
+	Matrix JTJ;
+	std::atomic<double> epsilon;
+	std::atomic<size_t> maxIter;
+
+};
+
+} // namespace LookUpSTORM
+
 using namespace LookUpSTORM;
 
+size_t FitterPrivate::lookupIndex(double x, double y, double z) const
+{
+	const size_t xi = static_cast<size_t>(std::round((x - minLat) / dLat));
+	const size_t yi = static_cast<size_t>(std::round((y - minLat) / dLat));
+	const size_t zi = static_cast<size_t>(std::round((z - minAx) / dAx));
+	const size_t index = zi + yi * countAx + xi * countAx * countLat;
+	return index;
+}
+
+const double* FitterPrivate::get(double x, double y, double z) const
+{
+	if (!isValid(x, y, z))
+		return nullptr;
+	const size_t index = lookupIndex(x, y, z);
+	if (index > countIndex) {
+		std::cout << "Index error: " << x << ", " << y << ", " << z << std::endl;
+		return nullptr;
+	}
+	return &lookup[index * stride];
+}
+
 Fitter::Fitter()
-    : m_lookup(nullptr)
-	, m_tableAllocated(false)
-    , m_countLat(0)
-	, m_countAx(0)
-	, m_countIndex(0)
-	, m_winSize(0)
-	, m_stride(0)
-	, m_dLat(0.0)
-	, m_dAx(0.0)
-	, m_minLat(0.0)
-	, m_maxLat(0.0)
-	, m_minAx(0.0)
-	, m_maxAx(0)
-	, m_x0(5, Uninitialized)
-	, m_x1(5, Uninitialized)
-	, m_JTJ(5, 5, Uninitialized)
-	, m_epsilon(1E-2)
-	, m_maxIter(5)
+	: d(new FitterPrivate)
 {
 }
 
 Fitter::~Fitter()
 {
+	delete d;
 	release();
 }
 
 void Fitter::release()
 {
-	if (m_tableAllocated) {
-		delete[] m_lookup;
-		m_lookup = nullptr;
-		m_tableAllocated = false;
-		m_x0 = {};
-		m_x1 = {};
-		m_JTJ = {};
-		m_countIndex = 0;
-		m_winSize = 0;
+	if (d->tableAllocated) {
+		delete[] d->lookup;
+		d->lookup = nullptr;
+		d->tableAllocated = false;
+		d->x0 = {};
+		d->x1 = {};
+		d->JTJ = {};
+		d->countIndex = 0;
+		d->winSize = 0;
 	}
 }
 
 bool Fitter::isReady() const
 {
-	return (m_lookup != nullptr) && (m_countIndex > 0) && (m_winSize > 0);
+	return (d->lookup != nullptr) && (d->countIndex > 0) && (d->winSize > 0);
 }
 
 bool Fitter::fitSingle(const ImageU16& roi, Molecule& mol)
 {
-	const size_t startLat = m_winSize / 2;
-	m_x0[0] = mol.background;
-	m_x0[1] = mol.peak; // std::max(50.0, mol.peak - mol.background);
-	m_x0[2] = startLat;
-	m_x0[3] = startLat;
-	m_x0[4] = 0.0;
+	const size_t startLat = d->winSize / 2;
+	d->x0[0] = mol.background;
+	d->x0[1] = mol.peak; // std::max(50.0, mol.peak - mol.background);
+	d->x0[2] = startLat;
+	d->x0[3] = startLat;
+	d->x0[4] = 0.0;
 
-	const size_t N = m_winSize * m_winSize;
+	const size_t N = d->winSize * d->winSize;
 
-	const size_t maxIter = m_maxIter.load();
-	const double eps = m_epsilon.load();
+	const size_t maxIter = d->maxIter.load();
+	const double eps = d->epsilon.load();
 
 	size_t iter = 0;
 	for (; iter < maxIter; ++iter) {
-		const double* lookup = get(m_x0[2], m_x0[3], m_x0[4]);
+		const double* lookup = d->get(d->x0[2], d->x0[3], d->x0[4]);
 		if (lookup == nullptr)
 			break;
-		double bg = m_x0[0];
-		double peak = m_x0[1];
+		double bg = d->x0[0];
+		double peak = d->x0[1];
 
-		m_x1.setZero();
+		d->x1.setZero();
 
 		double ssq0 = 0.0;
 		for (int i = 0; i < N; i++) {
@@ -104,55 +172,58 @@ bool Fitter::fitSingle(const ImageU16& roi, Molecule& mol)
 			const double dx = peak * (*lookup++);
 			const double dy = peak * (*lookup++);
 			const double dz = peak * (*lookup++);
-			const double rval = bg + peak * e - roi[i];
-			ssq0 += rval * rval;
+			const double h = bg + peak * e;
 
 			// Jacobian 
-			m_J(i, 0) = 1.0;
-			m_J(i, 1) = e;
-			m_J(i, 2) = dx;
-			m_J(i, 3) = dy;
-			m_J(i, 4) = dz;
+			d->J(i, 0) = 1.0;
+			d->J(i, 1) = e;
+			d->J(i, 2) = dx;
+			d->J(i, 3) = dy;
+			d->J(i, 4) = dz;
+
+			// residual or cost
+			const double rval = h - roi[i];
+			ssq0 += rval * rval;
 
 			// JTr
-			m_x1[0] += rval;
-			m_x1[1] += rval * e;
-			m_x1[2] += rval * dx;
-			m_x1[3] += rval * dy;
-			m_x1[4] += rval * dz;
+			d->x1[0] += rval;
+			d->x1[1] += rval * e;
+			d->x1[2] += rval * dx;
+			d->x1[3] += rval * dy;
+			d->x1[4] += rval * dz;
 		}
 
-		//if (BLAS::dgemm(BLAS::CblasTrans, BLAS::CblasNoTrans, 1.0, m_J, m_J, 0.0, m_JTJ) != LIN_SUCCESS) break;
-		if (BLAS::dsyrk(BLAS::CblasUpper, BLAS::CblasTrans, 1.0, m_J, 0.0, m_JTJ) != LIN_SUCCESS) break;
+		//if (BLAS::dgemm(BLAS::CblasTrans, BLAS::CblasNoTrans, 1.0, d->J, d->J, 0.0, d->JTJ) != LIN_SUCCESS) break;
+		if (BLAS::dsyrk(BLAS::CblasUpper, BLAS::CblasTrans, 1.0, d->J, 0.0, d->JTJ) != LIN_SUCCESS) break;
 
 #ifdef NO_LAPACKE_LUT
-		if (BLAS::dtrsv(BLAS::CblasUpper, BLAS::CblasTrans, BLAS::CblasNonUnit, m_JTJ, m_x1) != LIN_SUCCESS)
+		if (BLAS::dtrsv(BLAS::CblasUpper, BLAS::CblasTrans, BLAS::CblasNonUnit, d->JTJ, d->x1) != LIN_SUCCESS)
 			break;
 #else
 		int ipiv[5];
-		if (LAPACKE::dsysv(LAPACKE::U, m_JTJ, ipiv, m_x1) != 0)
+		if (LAPACKE::dsysv(LAPACKE::U, d->JTJ, ipiv, d->x1) != 0)
 			break;
 #endif // NO_LAPACKE_LUT
 
 		/*double delta = 0.0;
 		for (int i = 0; i < 5; ++i)
-			delta += std::abs(m_x1[i]);
+			delta += std::abs(d->x1[i]);
 
 		if (delta < 1E-3) {
 			std::cout << "Too small change!" << std::endl;
 			break;
 		}*/
 
-		double xNew = m_x0[2] - m_x1[2];
-		double yNew = m_x0[3] - m_x1[3];
-		double zNew = m_x0[4] - m_x1[4];
+		double xNew = d->x0[2] - d->x1[2];
+		double yNew = d->x0[3] - d->x1[3];
+		double zNew = d->x0[4] - d->x1[4];
 
-		lookup = get(xNew, yNew, zNew);
+		lookup = d->get(xNew, yNew, zNew);
 		if (lookup == nullptr)
 			break;
 
-		bg -= m_x1[0];
-		peak -= m_x1[1];
+		bg -= d->x1[0];
+		peak -= d->x1[1];
 
 		double ssq1 = 0.0;
 		for (int i = 0; i < N; i++, lookup += 4) {
@@ -161,28 +232,28 @@ bool Fitter::fitSingle(const ImageU16& roi, Molecule& mol)
 		}
 
 		if ((ssq1 < ssq0) && ((ssq0 - ssq1) > eps)) {
-			m_x0 -= m_x1; 
+			d->x0 -= d->x1; 
 		} else {
 			break;
 		}
 	}
 
-	if ((iter == 0) || (m_x0[0] < 0.0) || (m_x0[1] < 0.0) || (m_x0[0] > 13000.0) || (m_x0[1] > 13000.0) || 
-		cmp(m_x0[2], startLat) || cmp(m_x0[3], startLat) || (m_x0[4] == 0.0))
+	if ((iter == 0) || (d->x0[0] < 0.0) || (d->x0[1] < 0.0) || (d->x0[0] > 13000.0) || (d->x0[1] > 13000.0) || 
+		cmp(d->x0[2], startLat) || cmp(d->x0[3], startLat) || (d->x0[4] == 0.0))
 		return false;
 
-	m_x0[2] -= fmod(m_x0[2], m_dLat);
-	m_x0[3] -= fmod(m_x0[3], m_dLat);
-	m_x0[4] -= fmod(m_x0[4], m_dAx);
+	d->x0[2] -= fmod(d->x0[2], d->dLat);
+	d->x0[3] -= fmod(d->x0[3], d->dLat);
+	d->x0[4] -= fmod(d->x0[4], d->dAx);
 
-	if (!isValid(m_x0[2], m_x0[3], m_x0[4]))
+	if (!isValid(d->x0[2], d->x0[3], d->x0[4]))
 		return false;
 
-	mol.background = m_x0[0];
-	mol.peak = m_x0[1];
-	mol.x = m_x0[2];
-	mol.y = m_x0[3];
-	mol.z = m_x0[4];
+	mol.background = d->x0[0];
+	mol.peak = d->x0[1];
+	mol.x = d->x0[2];
+	mol.y = d->x0[3];
+	mol.z = d->x0[4];
 
 	return true;
 }
@@ -191,133 +262,112 @@ bool Fitter::setLookUpTable(const double* data, size_t dataSize, bool allocated,
 {
 	const double borderLat = std::floor((windowSize - rangeLat) / 2);
 	if (borderLat < 1.0) {
-		std::cerr << "LookUpSTORM_CPPDLL: setLookUpTable: Lateral border is less than one! (Lateral range: " << rangeLat << ")" << std::endl;
+		std::cerr << "LookUpSTORd->CPPDLL: setLookUpTable: Lateral border is less than one! (Lateral range: " << rangeLat << ")" << std::endl;
 		return false;
 	}
 
-	m_lookup = data;
-	m_tableAllocated = allocated;
-	m_winSize = windowSize;
+	d->lookup = data;
+	d->tableAllocated = allocated;
+	d->winSize = windowSize;
 
-	m_dLat = dLat;
-	m_dAx = dAx;
+	d->dLat = dLat;
+	d->dAx = dAx;
 
-	m_minLat = borderLat;
-	m_maxLat = windowSize - borderLat;
-	m_minAx = -rangeAx * 0.5;
-	m_maxAx = rangeAx * 0.5;
-	m_countLat = static_cast<size_t>(std::floor((((m_maxLat - m_minLat) / dLat) + 1)));
-	m_countAx = static_cast<size_t>(std::floor(((rangeAx / dAx) + 1)));
+	d->minLat = borderLat;
+	d->maxLat = windowSize - borderLat;
+	d->minAx = -rangeAx * 0.5;
+	d->maxAx = rangeAx * 0.5;
+	d->countLat = static_cast<size_t>(std::floor((((d->maxLat - d->minLat) / dLat) + 1)));
+	d->countAx = static_cast<size_t>(std::floor(((rangeAx / dAx) + 1)));
 
-	m_countIndex = m_countLat * m_countLat * m_countAx;
+	d->countIndex = d->countLat * d->countLat * d->countAx;
 
-	m_stride = m_winSize * m_winSize * 4;
+	d->stride = d->winSize * d->winSize * 4;
 
-	const size_t expected = m_countIndex * m_stride;
+	const size_t expected = d->countIndex * d->stride;
 	if (dataSize != expected) {
-		std::cerr << "LookUpSTORM_CPPDLL: setLookUpTable: Template size does not correspond to the supplied array!" 
+		std::cerr << "LookUpSTORd->CPPDLL: setLookUpTable: Template size does not correspond to the supplied array!" 
 				  << "(expected: " << expected << ", got: " << dataSize << ")" << std::endl;
 		return false;
 	}
 
 	const size_t N = size_t(windowSize) * size_t(windowSize);
-	m_J = Matrix(N, 5, Uninitialized);
+	d->J = Matrix(N, 5, Uninitialized);
 
 	return true;
 }
 
 const double* Fitter::lookUpTablePtr() const
 {
-	return m_lookup;
-}
-
-size_t Fitter::lookupIndex(double x, double y, double z) const
-{
-	const size_t xi = static_cast<size_t>(std::round((x - m_minLat) / m_dLat));
-	const size_t yi = static_cast<size_t>(std::round((y - m_minLat) / m_dLat));
-	const size_t zi = static_cast<size_t>(std::round((z - m_minAx) / m_dAx));
-	const size_t index = zi + yi * m_countAx + xi * m_countAx * m_countLat;
-	return index;
+	return d->lookup;
 }
 
 size_t Fitter::windowSize() const
 {
-	return m_winSize;
+	return d->winSize;
 }
 
 double Fitter::deltaLat() const
 {
-	return m_dLat;
+	return d->dLat;
 }
 
 double Fitter::rangeLat() const
 {
-	return m_maxLat - m_minLat - 1.0;
+	return d->maxLat - d->minLat - 1.0;
 }
 
 double Fitter::minLat() const
 {
-	return m_minLat;
+	return d->minLat;
 }
 
 double Fitter::maxLat() const
 {
-	return m_maxLat;
+	return d->maxLat;
 }
 
 double Fitter::deltaAx() const
 {
-	return m_dAx;
+	return d->dAx;
 }
 
 double Fitter::rangeAx() const
 {
-	return m_maxAx - m_minAx;
+	return d->maxAx - d->minAx;
 }
 
 double Fitter::minAx() const
 {
-	return m_minAx;
+	return d->minAx;
 }
 
 double Fitter::maxAx() const
 {
-	return m_maxAx;
+	return d->maxAx;
 }
 
 void Fitter::setEpsilon(double eps)
 {
-	m_epsilon.store(eps);
+	d->epsilon.store(eps);
 }
 
 double Fitter::epsilon() const
 {
-	return m_epsilon.load();
+	return d->epsilon.load();
 }
 
 void Fitter::setMaxIter(size_t maxIter)
 {
-	m_maxIter.store(maxIter);
+	d->maxIter.store(maxIter);
 }
 
 size_t Fitter::maxIter() const
 {
-	return m_maxIter.load();
+	return d->maxIter.load();
 }
 
 constexpr bool Fitter::isValid(double x, double y, double z) const
 {
-	return ((x >= m_minLat) && (x <= m_maxLat) && (y >= m_minLat) && (y <= m_maxLat) && (z >= m_minAx) && (z <= m_maxAx));
-}
-
-const double* Fitter::get(double x, double y, double z) const
-{
-	if (!isValid(x, y, z))
-		return nullptr;
-	const size_t index = lookupIndex(x, y, z);
-	if (index > m_countIndex) {
-		std::cout << "Index error: " << x << ", " << y << ", " << z << std::endl;
-		return nullptr;
-	}
-	return &m_lookup[index * m_stride];
+	return d->isValid(x, y, z);
 }

@@ -31,21 +31,23 @@
 #define CONTROLLER_H
  
 #include <atomic>
+#include <list>
 #include "Fitter.h"
 #include "Renderer.h"
 
 namespace LookUpSTORM
 {
 
-class DLL_DEF_LUT Controller
+class ControllerPrivate;
+
+class DLL_DEF_LUT Controller final
 {
 public:
 #ifdef JNI_EXPORT_LUT
 	static Controller* inst();
 	static void release();
-#else
-	virtual ~Controller();
 #endif
+	~Controller();
 
 	bool isReady() const;
 
@@ -117,27 +119,10 @@ private:
 	Controller();
 
 private:
+	ControllerPrivate* const d;
 #ifdef JNI_EXPORT_LUT
 	static Controller* LOOKUPSTORM_INSTANCE;
 #endif // CONTROLLER_STATIC
-
-	std::atomic<bool> m_isLocFinished;
-	std::atomic<bool> m_isSMLMImageReady;
-	LocalMaximumSearch m_nms;
-	int m_imageWidth;
-	int m_imageHeight;
-	std::atomic<uint16_t> m_threshold;
-	Fitter m_fitter;
-	std::list<Molecule> m_detectedMolecues;
-	std::atomic<int32_t> m_numberOfDetectedLocs;
-	std::atomic<double> m_frameFittingTimeMS;
-	std::atomic<double> m_renderTimeMS;
-	std::atomic<int> m_renderUpdateRate;
-	std::atomic<bool> m_enableRendering;
-	std::atomic<double> m_timeoutMS;
-	std::list<Molecule> m_mols;
-	Renderer m_renderer;
-	std::atomic<bool> m_verbose;
 
 };
 

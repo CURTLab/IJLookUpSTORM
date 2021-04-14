@@ -38,7 +38,7 @@ namespace LookUpSTORM
 /*
  * rectange class inspired by the QT QRect interface
  */
-class Rect
+class DLL_DEF_LUT Rect
 {
 public:
     constexpr inline Rect() : x1(0), y1(0), x2(-1), y2(-1) {}

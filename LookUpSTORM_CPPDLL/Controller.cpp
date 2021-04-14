@@ -31,97 +31,138 @@
 
 #include <chrono>
 #include <iostream>
+#include <algorithm>
+#include <cmath>
+
+#include "LocalMaximumSearch.h"
+
+#undef min
+#undef max
+
+namespace LookUpSTORM
+{
+
+class ControllerPrivate
+{
+public:
+    inline ControllerPrivate()
+        : isLocFinished(false)
+        , isSMLMImageReady(false)
+        , nms(1, 6)
+        , imageWidth(0)
+        , imageHeight(0)
+        , threshold(0)
+        , frameFittingTimeMS(0.0)
+        , renderUpdateRate(5)
+        , timeoutMS(250.0)
+        , enableRendering(true)
+        , verbose(false)
+    {
+        numberOfDetectedLocs.store(0);
+    }
+
+    std::atomic<bool> isLocFinished;
+    std::atomic<bool> isSMLMImageReady;
+    LocalMaximumSearch nms;
+    int imageWidth;
+    int imageHeight;
+    std::atomic<uint16_t> threshold;
+    Fitter fitter;
+    std::list<Molecule> detectedMolecues;
+    std::atomic<int32_t> numberOfDetectedLocs;
+    std::atomic<double> frameFittingTimeMS;
+    std::atomic<double> renderTimeMS;
+    std::atomic<int> renderUpdateRate;
+    std::atomic<bool> enableRendering;
+    std::atomic<double> timeoutMS;
+    std::list<Molecule> mols;
+    Renderer renderer;
+    std::atomic<bool> verbose;
+
+};
+
+} // namespace LookUpSTORM
 
 using namespace LookUpSTORM;
 
 #ifdef JNI_EXPORT_LUT
-Controller* Controller::LOOKUPSTORM_INSTANCE = nullptr;
+Controller* Controller::LOOKUPSTORd->INSTANCE = nullptr;
 #endif // CONTROLLER_STATIC
 
 Controller::Controller()
-    : m_isLocFinished(false)
-    , m_isSMLMImageReady(false)
-    , m_nms(1, 6)
-    , m_imageWidth(0)
-    , m_imageHeight(0)
-    , m_threshold(0)
-    , m_frameFittingTimeMS(0.0)
-    , m_renderUpdateRate(5)
-    , m_timeoutMS(250.0)
-    , m_enableRendering(true)
-    , m_verbose(false)
+    : d(new ControllerPrivate)
 {
-    m_numberOfDetectedLocs.store(0);
 }
 
 #ifdef JNI_EXPORT_LUT
 Controller* Controller::inst()
 {
-    if (LOOKUPSTORM_INSTANCE == nullptr)
-        LOOKUPSTORM_INSTANCE = new Controller;
-    return LOOKUPSTORM_INSTANCE;
+    if (LOOKUPSTORd->INSTANCE == nullptr)
+        LOOKUPSTORd->INSTANCE = new Controller;
+    return LOOKUPSTORd->INSTANCE;
 }
 
 void Controller::release()
 {
-    delete LOOKUPSTORM_INSTANCE;
-    LOOKUPSTORM_INSTANCE = nullptr;
-}
-#else
-LookUpSTORM::Controller::~Controller()
-{
+    delete LOOKUPSTORd->INSTANCE;
+    LOOKUPSTORd->INSTANCE = nullptr;
 }
 #endif // CONTROLLER_STATIC
 
+LookUpSTORM::Controller::~Controller()
+{
+    delete d;
+}
+
 bool Controller::isReady() const
 {
-    return m_renderer.isReady() && m_fitter.isReady() && (m_imageWidth > 0) && (m_imageHeight > 0);
+    return d->renderer.isReady() && d->fitter.isReady() && (d->imageWidth > 0) && (d->imageHeight > 0);
 }
 
 bool Controller::isLocFinished() const
 {
-    return m_isLocFinished.load();
+    return d->isLocFinished.load();
 }
 
 bool Controller::isSMLMImageReady() const
 {
-    return m_isSMLMImageReady.load();
+    return d->isSMLMImageReady.load();
 }
 
 void Controller::clearSMLMImageReady()
 {
-    m_isSMLMImageReady.store(false);
+    d->isSMLMImageReady.store(false);
 }
 
 bool Controller::processImage(ImageU16 image, int frame)
 {
-    const bool verbose = m_verbose.load();
+    const bool verbose = d->verbose.load();
     if (!isReady()) {
         if (verbose)
             std::cerr << "LookUpSTORM: Image processor is not ready!" << std::endl;
         return false;
     }
 
-    m_isLocFinished.store(false);
+    d->isLocFinished.store(false);
     const auto t0 = std::chrono::high_resolution_clock::now();
 
-    const size_t winSize = m_fitter.windowSize();
-    m_nms.setRadius(winSize * 3 / 4);
-    m_nms.setBorder(winSize / 2);
+    const size_t winSize = d->fitter.windowSize();
+    d->nms.setRadius(winSize * 3 / 4);
+    d->nms.setBorder(winSize / 2);
 
-    const uint16_t threshold = m_threshold.load();
-    const int updateRate = m_renderUpdateRate.load();
-    const double timeoutMS = m_timeoutMS.load();
+    const uint16_t threshold = d->threshold.load();
+    const int updateRate = d->renderUpdateRate.load();
+    const double timeoutMS = d->timeoutMS.load();
 
-    auto features = m_nms.find(image, m_threshold);
+    auto features = d->nms.find(image, d->threshold);
     Molecule m;
     Rect bounds = image.rect();
     Rect changedRegion;
-    m_detectedMolecues.clear();
+    d->detectedMolecues.clear();
     //std::cout << "Features: " << features.size() << std::endl;
     for (const auto& f : features) {
         auto t_start = std::chrono::high_resolution_clock::now();
-        m.peak = std::max(0.0, double(f.val) - f.localBg);
+        m.peak = std::max<double>(0.0, double(f.val) - f.localBg);
         m.background = f.localBg;
         m.x = f.x;
         m.y = f.y;
@@ -136,7 +177,7 @@ bool Controller::processImage(ImageU16 image, int frame)
 
         ImageU16 roi = image.subImage(region);
 
-        const bool success = m_fitter.fitSingle(roi, m);
+        const bool success = d->fitter.fitSingle(roi, m);
         auto t_end = std::chrono::high_resolution_clock::now();
 
         m.time_us = std::chrono::duration<double, std::micro>(t_end - t_start).count();
@@ -148,11 +189,11 @@ bool Controller::processImage(ImageU16 image, int frame)
             m.x += region.left();
             m.y += region.top();
 
-            changedRegion.extendByPoint(m_renderer.map(m.x, m.y));
-            m_renderer.set(m.x, m.y, m.z + 1E-6);
+            changedRegion.extendByPoint(d->renderer.map(m.x, m.y));
+            d->renderer.set(m.x, m.y, m.z + 1E-6);
 
-            m_detectedMolecues.push_back(m);
-            m_mols.push_back(m);
+            d->detectedMolecues.push_back(m);
+            d->mols.push_back(m);
         }
 
         const auto t = std::chrono::high_resolution_clock::now();
@@ -164,147 +205,147 @@ bool Controller::processImage(ImageU16 image, int frame)
     const auto t1 = std::chrono::high_resolution_clock::now();
 
     // update SMLM image
-    if (!m_isSMLMImageReady && m_enableRendering.load() && ((updateRate <= 1) || ((changedRegion.area() > 25) && (frame > 1) && (frame % updateRate == 0)))) {
-        m_renderer.updateImage();
+    if (!d->isSMLMImageReady && d->enableRendering.load() && ((updateRate <= 1) || ((changedRegion.area() > 25) && (frame > 1) && (frame % updateRate == 0)))) {
+        d->renderer.updateImage();
         changedRegion = {};
-        m_isSMLMImageReady = true;
+        d->isSMLMImageReady = true;
     }
 
     const auto t2 = std::chrono::high_resolution_clock::now();
 
-    m_frameFittingTimeMS.store(std::chrono::duration<double, std::milli>(t1 - t0).count());
-    m_renderTimeMS.store(std::chrono::duration<double, std::milli>(t2 - t1).count());
+    d->frameFittingTimeMS.store(std::chrono::duration<double, std::milli>(t1 - t0).count());
+    d->renderTimeMS.store(std::chrono::duration<double, std::milli>(t2 - t1).count());
 
 
     if (verbose)
-        std::cout << "Fitted " << m_detectedMolecues.size() << " emitter of frame " << frame << " in " << m_frameFittingTimeMS << " ms" << std::endl;
+        std::cout << "Fitted " << d->detectedMolecues.size() << " emitter of frame " << frame << " in " << d->frameFittingTimeMS << " ms" << std::endl;
 
-    m_numberOfDetectedLocs.store(static_cast<uint16_t>(m_detectedMolecues.size()));
-    m_isLocFinished.store(true);
+    d->numberOfDetectedLocs.store(static_cast<uint16_t>(d->detectedMolecues.size()));
+    d->isLocFinished.store(true);
     return true;
 }
 
 void Controller::setImageSize(int width, int height)
 {
-    m_imageWidth = width;
-    m_imageHeight = height;
+    d->imageWidth = width;
+    d->imageHeight = height;
 }
 
 int Controller::imageWidth() const
 {
-    return m_imageWidth;
+    return d->imageWidth;
 }
 
 int Controller::imageHeight() const
 {
-    return m_imageHeight;
+    return d->imageHeight;
 }
 
 void Controller::setThreshold(uint16_t threshold)
 {
-    m_threshold.store(threshold);
+    d->threshold.store(threshold);
 }
 
 uint16_t Controller::threshold() const
 {
-    return m_threshold.load();
+    return d->threshold.load();
 }
 
 void LookUpSTORM::Controller::setVerbose(bool verbose)
 {
-    m_verbose.store(verbose);
+    d->verbose.store(verbose);
 }
 
 bool LookUpSTORM::Controller::isVerbose() const
 {
-    return m_verbose.load();
+    return d->verbose.load();
 }
 
 void LookUpSTORM::Controller::setFrameRenderUpdateRate(int rate)
 {
-    m_renderUpdateRate.store(rate);
+    d->renderUpdateRate.store(rate);
 }
 
 int LookUpSTORM::Controller::frameRenderUpdateRate() const
 {
-    return m_renderUpdateRate.load();
+    return d->renderUpdateRate.load();
 }
 
 void LookUpSTORM::Controller::setTimeoutMS(double timeoutMS)
 {
-    m_timeoutMS.store(timeoutMS);
+    d->timeoutMS.store(timeoutMS);
 }
 
 double LookUpSTORM::Controller::timeoutMS() const
 {
-    return m_timeoutMS.load();
+    return d->timeoutMS.load();
 }
 
 std::list<Molecule>& Controller::detectedMolecues()
 {
-    return m_detectedMolecues;
+    return d->detectedMolecues;
 }
 
 std::list<Molecule>& Controller::allMolecues()
 {
-    return m_mols;
+    return d->mols;
 }
 
 int32_t Controller::numberOfDetectedLocs()
 {
-    return m_numberOfDetectedLocs.load();
+    return d->numberOfDetectedLocs.load();
 }
 
 Fitter& Controller::fitter()
 {
-    return m_fitter;
+    return d->fitter;
 }
 
 double LookUpSTORM::Controller::frameFittingTimeMS() const
 {
-    return m_frameFittingTimeMS.load();
+    return d->frameFittingTimeMS.load();
 }
 
 double LookUpSTORM::Controller::renderTimeMS() const
 {
-    return m_renderTimeMS.load();
+    return d->renderTimeMS.load();
 }
 
 void LookUpSTORM::Controller::setRenderingEnabled(bool enabled)
 {
-    m_enableRendering.store(enabled);
+    d->enableRendering.store(enabled);
 }
 
 bool LookUpSTORM::Controller::isRenderingEnabled() const
 {
-    return m_enableRendering.load();
+    return d->enableRendering.load();
 }
 
 Renderer& Controller::renderer()
 {
-    return m_renderer;
+    return d->renderer;
 }
 
 void Controller::setRenderScale(double scale)
 {
-    m_renderer.setSize(
-        (int)std::ceil(m_imageWidth * scale),
-        (int)std::ceil(m_imageHeight * scale),
+    d->renderer.setSize(
+        (int)std::ceil(d->imageWidth * scale),
+        (int)std::ceil(d->imageHeight * scale),
         scale, scale);
 }
 
 void Controller::setRenderSize(int width, int height)
 {
-    m_renderer.setSize(width, height,
-        double(width) / m_imageWidth, 
-        double(height) / m_imageHeight);
+    d->renderer.setSize(width, height,
+        double(width) / d->imageWidth, 
+        double(height) / d->imageHeight);
 }
 
 void Controller::reset()
 {
-    m_isLocFinished.store(false);
-    m_isSMLMImageReady.store(false);
-    m_numberOfDetectedLocs.store(0);
-    m_mols.clear();
-    m_renderer.clear();
+    d->isLocFinished.store(false);
+    d->isSMLMImageReady.store(false);
+    d->numberOfDetectedLocs.store(0);
+    d->mols.clear();
+    d->renderer.clear();
 }
