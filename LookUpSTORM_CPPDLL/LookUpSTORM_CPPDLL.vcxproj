@@ -83,7 +83,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Program Files\Java\jdk1.6.0_45\include\win32;C:\Program Files\Java\jdk1.6.0_45\include;$(IncludePath)</IncludePath>
+    <IncludePath>.\include;C:\Program Files\Java\jdk1.6.0_45\include\win32;C:\Program Files\Java\jdk1.6.0_45\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\Java\jdk1.6.0_45\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -147,56 +147,56 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="atlas\atlas_enum.h" />
-    <ClInclude Include="atlas\atlas_refalias1.h" />
-    <ClInclude Include="atlas\atlas_refalias2.h" />
-    <ClInclude Include="atlas\atlas_refalias3.h" />
-    <ClInclude Include="atlas\atlas_reflevel1.h" />
-    <ClInclude Include="atlas\atlas_reflevel2.h" />
-    <ClInclude Include="atlas\atlas_reflevel3.h" />
-    <ClInclude Include="atlas\atlas_reflvl2.h" />
-    <ClInclude Include="atlas\atlas_reflvl3.h" />
-    <ClInclude Include="atlas\atlas_refmisc.h" />
-    <ClInclude Include="atlas\cblas.h" />
-    <ClInclude Include="ColorMap.h" />
-    <ClInclude Include="Common.h" />
-    <ClInclude Include="Fitter.h" />
-    <ClInclude Include="Image.h" />
-    <ClInclude Include="LinearMath.h" />
-    <ClInclude Include="LocalMaximumSearch.h" />
-    <ClInclude Include="Controller.h" />
-    <ClInclude Include="LookUpSTORM_CPPDLL.h" />
-    <ClInclude Include="Matrix.h" />
-    <ClInclude Include="Rect.h" />
-    <ClInclude Include="Renderer.h" />
-    <ClInclude Include="Vector.h" />
+    <ClInclude Include="src\atlas\atlas_enum.h" />
+    <ClInclude Include="src\atlas\atlas_refalias1.h" />
+    <ClInclude Include="src\atlas\atlas_refalias2.h" />
+    <ClInclude Include="src\atlas\atlas_refalias3.h" />
+    <ClInclude Include="src\atlas\atlas_reflevel1.h" />
+    <ClInclude Include="src\atlas\atlas_reflevel2.h" />
+    <ClInclude Include="src\atlas\atlas_reflevel3.h" />
+    <ClInclude Include="src\atlas\atlas_reflvl2.h" />
+    <ClInclude Include="src\atlas\atlas_reflvl3.h" />
+    <ClInclude Include="src\atlas\atlas_refmisc.h" />
+    <ClInclude Include="src\atlas\cblas.h" />
+    <ClInclude Include="src\ColorMap.h" />
+    <ClInclude Include="include\Common.h" />
+    <ClInclude Include="include\Fitter.h" />
+    <ClInclude Include="include\Image.h" />
+    <ClInclude Include="src\LinearMath.h" />
+    <ClInclude Include="src\LocalMaximumSearch.h" />
+    <ClInclude Include="include\Controller.h" />
+    <ClInclude Include="src\LookUpSTORM_CPPDLL.h" />
+    <ClInclude Include="src\Matrix.h" />
+    <ClInclude Include="include\Rect.h" />
+    <ClInclude Include="include\Renderer.h" />
+    <ClInclude Include="src\Vector.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="atlas\ATL_drefsyrk.c" />
-    <ClCompile Include="atlas\ATL_drefsyrkLN.c" />
-    <ClCompile Include="atlas\ATL_drefsyrkLT.c" />
-    <ClCompile Include="atlas\ATL_drefsyrkUN.c" />
-    <ClCompile Include="atlas\ATL_drefsyrkUT.c" />
-    <ClCompile Include="atlas\ATL_dreftrsv.c" />
-    <ClCompile Include="atlas\ATL_dreftrsvLNN.c" />
-    <ClCompile Include="atlas\ATL_dreftrsvLNU.c" />
-    <ClCompile Include="atlas\ATL_dreftrsvLTN.c" />
-    <ClCompile Include="atlas\ATL_dreftrsvLTU.c" />
-    <ClCompile Include="atlas\ATL_dreftrsvUNN.c" />
-    <ClCompile Include="atlas\ATL_dreftrsvUNU.c" />
-    <ClCompile Include="atlas\ATL_dreftrsvUTN.c" />
-    <ClCompile Include="atlas\ATL_dreftrsvUTU.c" />
-    <ClCompile Include="ColorMap.cpp" />
-    <ClCompile Include="Fitter.cpp" />
-    <ClCompile Include="Image.cpp" />
-    <ClCompile Include="LinearMath.cpp" />
-    <ClCompile Include="LocalMaximumSearch.cpp" />
-    <ClCompile Include="Controller.cpp" />
-    <ClCompile Include="LookUpSTORM_CPPDLL.cpp" />
-    <ClCompile Include="Matrix.cpp" />
-    <ClCompile Include="Rect.cpp" />
-    <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="Vector.cpp" />
+    <ClCompile Include="src\atlas\ATL_drefsyrk.c" />
+    <ClCompile Include="src\atlas\ATL_drefsyrkLN.c" />
+    <ClCompile Include="src\atlas\ATL_drefsyrkLT.c" />
+    <ClCompile Include="src\atlas\ATL_drefsyrkUN.c" />
+    <ClCompile Include="src\atlas\ATL_drefsyrkUT.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsv.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsvLNN.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsvLNU.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsvLTN.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsvLTU.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsvUNN.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsvUNU.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsvUTN.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsvUTU.c" />
+    <ClCompile Include="src\ColorMap.cpp" />
+    <ClCompile Include="src\Fitter.cpp" />
+    <ClCompile Include="src\Image.cpp" />
+    <ClCompile Include="src\LinearMath.cpp" />
+    <ClCompile Include="src\LocalMaximumSearch.cpp" />
+    <ClCompile Include="src\Controller.cpp" />
+    <ClCompile Include="src\LookUpSTORM_CPPDLL.cpp" />
+    <ClCompile Include="src\Matrix.cpp" />
+    <ClCompile Include="src\Rect.cpp" />
+    <ClCompile Include="src\Renderer.cpp" />
+    <ClCompile Include="src\Vector.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

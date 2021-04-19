@@ -86,7 +86,7 @@ public:
 using namespace LookUpSTORM;
 
 #ifdef JNI_EXPORT_LUT
-Controller* Controller::LOOKUPSTORd->INSTANCE = nullptr;
+Controller* Controller::LOOKUPSTORM_INSTANCE = nullptr;
 #endif // CONTROLLER_STATIC
 
 Controller::Controller()
@@ -97,15 +97,15 @@ Controller::Controller()
 #ifdef JNI_EXPORT_LUT
 Controller* Controller::inst()
 {
-    if (LOOKUPSTORd->INSTANCE == nullptr)
-        LOOKUPSTORd->INSTANCE = new Controller;
-    return LOOKUPSTORd->INSTANCE;
+    if (LOOKUPSTORM_INSTANCE == nullptr)
+        LOOKUPSTORM_INSTANCE = new Controller;
+    return LOOKUPSTORM_INSTANCE;
 }
 
 void Controller::release()
 {
-    delete LOOKUPSTORd->INSTANCE;
-    LOOKUPSTORd->INSTANCE = nullptr;
+    delete LOOKUPSTORM_INSTANCE;
+    LOOKUPSTORM_INSTANCE = nullptr;
 }
 #endif // CONTROLLER_STATIC
 

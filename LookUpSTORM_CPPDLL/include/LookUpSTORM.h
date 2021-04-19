@@ -27,48 +27,13 @@
  *
  ****************************************************************************/
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef LOOKUPSTORM_H
+#define LOOKUPSTORM_H
 
-#include <iostream>
-#include <cmath>
-#include <algorithm>
+#include "Common.h"
+#include "Controller.h"
+#include "Fitter.h"
+#include "Renderer.h"
+#include "Image.h"
 
-#undef min
-#undef max
-
-#define NO_LAPACKE_LUT
-//#define USE_MKL_LUT
-//#define JNI_EXPORT_LUT
-#define DLL_EXPORT_LUT
-
-#if !defined(JNI_EXPORT_LUT) && defined(DLL_EXPORT_LUT)
-#define DLL_DEF_LUT __declspec(dllexport)
-#elif !defined(JNI_EXPORT_LUT) && defined(DLL_IMPORT_LUT) 
-#define DLL_DEF_LUT __declspec(dllimport)
-#else
-#define DLL_DEF_LUT
-#endif // DLL_EXPORT
-
-
-namespace LookUpSTORM
-{
-
-template<typename T>
-static inline T constexpr sqr(const T& x) { return x * x; }
-
-template <class T>
-static inline T constexpr bound(const T& v, const T& lo, const T& hi) { return (v < lo ? lo : (v > hi ? hi: v)); }
-
-static inline bool cmp(double v1, double v2) { return std::abs(v1 - v2) * 1E12 <= std::min(std::abs(v1), std::abs(v2)); }
-
-static constexpr uint32_t BLACK = 0xff000000;
-
-enum class Initialization {
-    Uninitialized
-};
-static constexpr Initialization Uninitialized = Initialization::Uninitialized;
-
-} // namespace LookUpSTORM
-
-#endif // !COMMON_H
+#endif // LOOKUPSTORM_H
