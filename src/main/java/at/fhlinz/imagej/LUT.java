@@ -35,32 +35,32 @@ package at.fhlinz.imagej;
  */
 public interface LUT {
     /**
-     * @return pointer to the generated lookup table array 
+     * @return get the pointer to the generated lookup table array 
      */
     public double[] getLookUpTableArray();
     
     /**
-     * @return get minimum lateral position within the template in pixels
+     * @return get the minimum lateral position within the template in pixels
      */
     public double getMinLat();
 
     /**
-     * @return get maximum lateral position within the template in pixels
+     * @return get the maximum lateral position within the template in pixels
      */
     public double getMaxLat();
 
     /**
-     * @return get minimum axial position in nm
+     * @return get the minimum axial position in nm
      */
     public double getMinAx();
 
     /**
-     * @return get maximum axial position in nm
+     * @return get the maximum axial position in nm
      */
     public double getMaxAx();
 
     /**
-     * @return get window size of the templates in pixels
+     * @return get the window size of the templates in pixels
      */
     public int getWindowSize();
 

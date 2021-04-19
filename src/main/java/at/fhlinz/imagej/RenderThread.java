@@ -56,8 +56,8 @@ public class RenderThread extends Thread {
     
     /** 
      * Set the rendering image size 
-     * @param width
-     * @param height 
+     * @param width Render image width
+     * @param height Render image height
      */
     public void setSize(int width, int height) {
         _lookUp.releaseRenderImage();

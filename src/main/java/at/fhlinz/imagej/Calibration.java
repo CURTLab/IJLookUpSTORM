@@ -54,7 +54,21 @@ import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
 
 /**
  * Calibration class to handle astigmatism single molecule localization 
- * microscopy calibration files
+ * microscopy calibration files using cubic b-splines
+ * 
+ * Input is a YAML file:
+ * !!at.calibration.bspline { 
+ *    theta: -0.103174,
+ *    pixelSize: 166.667, 
+ *    knot0x: 0.986468, knot0y: 0.402337, knot0z: 0, 
+ *    ...
+ *    knot9x: 0.3007, knot9y: 0.558788, knot9z: 2000
+ * }
+ * 
+ * Where theta is the rotation angle of the elliptical Gaussian functions in 
+ * RAD, pixelSize of in nm, knot0 .. knotN where N is the last spline knot,
+ * knotX & knotY in pixel and knotZ in nm
+ * 
  * @author Fabian Hauser
  */
 public class Calibration {
@@ -69,6 +83,9 @@ public class Calibration {
     private double _maxZ;
     private double _focusPlane;
     
+    /**
+     * Constructor
+     */
     public Calibration() {
         _parameters = new HashMap<String, Double>();
         _pixelSizeUM = 1.0;

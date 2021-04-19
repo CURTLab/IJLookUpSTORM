@@ -306,7 +306,8 @@ public class DialogLookUpSTORM extends JFrame {
     }
     
     /** 
-     * 
+     * Set the fileName including the path for either the calibration or the
+     * binary LUT file (depending on the file extension (
      * @param fileName 
      */
     public void setFileName(String fileName) {
@@ -314,13 +315,12 @@ public class DialogLookUpSTORM extends JFrame {
             _comboSource.setSelectedIndex(0);
         else if (fileName.toLowerCase().endsWith(".lut"))
             _comboSource.setSelectedIndex(1);
-        final String selectSource = (String)_comboSource.getSelectedItem();
         if (checkLUTData(fileName))
             _fileNameField.setText(fileName);
     }
     
     /** 
-     * 
+     * Set the output path for the real time experiment
      * @param path 
      */
     public void setOutputPath(String path) {
@@ -328,7 +328,7 @@ public class DialogLookUpSTORM extends JFrame {
     }
     
     /** 
-     * 
+     * Set the pixel size of the input image stream in nm
      * @param pixelSize_nm 
      */
     public void setPixelSize(double pixelSize_nm) {

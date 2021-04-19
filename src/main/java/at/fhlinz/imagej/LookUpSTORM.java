@@ -52,38 +52,55 @@ public class LookUpSTORM {
      * @param dAx
      * @param rangeLat
      * @param rangeAx
-     * @return 
+     * @return Returns false if the LUT array size does not match the supplied
+     * parameter
      */
     public native boolean setLookUpTable(double[] lookupTable, int windowSize, double dLat, double dAx, double rangeLat, double rangeAx);
     
     /** 
+     * Sets the LUT table from a binary file containing the parameters and image
+     * templates. All parameters in the header are in little endian. 
      * 
-     * @param fileName
-     * @return 
+     * struct HeaderLUT {
+     *    char id[8];
+     *    uint64 dataSize;
+     *    uint64 indices;
+     *    uint64 windowSize;
+     *    float64 dLat;
+     *    float64 dAx;
+     *    float64 rangeLat;
+     *    float64 rangeAx;
+     * }
+     * 
+     * @param fileName file name including the path to the LUT binary file.
+     * @return returns true if the LUT file could be loaded
      */
     public native boolean setLookUpTable(String fileName);
     
     /** 
-     * 
-     * @return 
+     * Releases the memory used for the internal LUT
+     * @return returns true if the LUT memory could be released
      */
     public native boolean releaseLookUpTable();
     
     /** 
-     * 
-     * @param eps 
+     * Residual squared difference stop value used by the Gauss-Newton 
+     * algorithm.
+     * @param eps Epsilon value (typical 1E-2) 
      */
     public native void setEpsilon(double eps);
     
     /** 
-     * 
-     * @param maxIter 
+     * Sets the maximum iterations for the Gauss-Newton algorithm 
+     * used to fit single molecules. (Thread-Safe)
+     * @param maxIter Maximum iteration (typical 5)
      */
     public native void setMaxIter(int maxIter);
     
     /** 
-     * 
-     * @param threshold 
+     * Sets the threshold in counts of the gray scale image without the 
+     * background. Should be interactivly (Thread-Safe)
+     * @param threshold Threshold is a unsigned short value (0-65535)
      */
     public native void setThreshold(int threshold);
     
@@ -182,16 +199,18 @@ public class LookUpSTORM {
     public native void setVerbose(boolean verbose);
     
     /** 
-     * 
-     * @param pixels
-     * @param SMLMimageWidth
-     * @param SMLMimageHeigt
-     * @return 
+     * Sets a pointer (should be uint32) to a allocated image in which the
+     * results of the real time analysis are rendered(render target)
+     * @param pixels pointer to a allocated image (uint32)
+     * @param SMLMimageWidth supplied image width
+     * @param SMLMimageHeigt supplied image height
+     * @return Returns false if the image size does not match the array size
+     * @see LookUpSTORM#releaseRenderImage() 
      */
     public native boolean setRenderImage(int[] pixels, int SMLMimageWidth, int SMLMimageHeigt);
     
     /** 
-     * Release the memory of the set render image
+     * Release the memory of the set render image target
      * @return Returns false if no memory was in used
      * @see LookUpSTORM#setRenderImage(int[], int, int) 
      */
@@ -220,15 +239,13 @@ public class LookUpSTORM {
     public native void clearRenderingReady();
     
     /** 
-     * 
-     * @return 
+     * @return Render image width
      * @see LookUpSTORM#setRenderImage(int[], int, int) 
      */
     public native int getRenderImageWidth();
     
     /** 
-     * 
-     * @return 
+     * @return Render image height
      * @see LookUpSTORM#setRenderImage(int[], int, int) 
      */
     public native int getRenderImageHeight();
@@ -258,7 +275,7 @@ public class LookUpSTORM {
     
     /**
      * Feed a imagej image to the CPPDLL for fitting
-     * @param ip 16 bit short image
+     * @param ip 16-bit unsigned short image (0-65535)
      * @param frame Index of supplied image (zero starting index)
      * @return true if image could be processed (size is the same as set)
      * @see LookUpSTORM#setImagePara(int, int) 
@@ -341,6 +358,7 @@ public class LookUpSTORM {
             stream.close();
             return true;
         } catch (FileNotFoundException ex) {
+            System.out.println("LookUpSTORM: Could not save file " + fileName);
             return false;
         }
     }

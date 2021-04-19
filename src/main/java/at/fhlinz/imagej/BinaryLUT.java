@@ -35,7 +35,21 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- *
+ * LUT implementation that loads a binary file containing the PSF at discrete 3D
+ * positions including their derivatives. Can also be loaded using the CPP 
+ * library (much faster!).
+ * 
+ * struct HeaderLUT {
+ *    char id[8];
+ *    uint64 dataSize;
+ *    uint64 indices;
+ *    uint64 windowSize;
+ *    float64 dLat;
+ *    float64 dAx;
+ *    float64 rangeLat;
+ *    float64 rangeAx;
+ * }
+ * 
  * @author Fabian Hauser
  */
 public class BinaryLUT implements LUT {
@@ -130,14 +144,6 @@ public class BinaryLUT implements LUT {
             }
             
             _fileName = fileName;
-            
-            /*final int size = (int)(dataSize / 8);
-            templates_ = new double[size];
-            
-            for (int i = 0; i < size; i++) {
-                templates_[i] = readDouble64(in);
-                IJ.showProgress(i, size);
-            }*/
             return true;
         } catch (FileNotFoundException ex) {
         } catch (IOException ex) {
@@ -170,7 +176,7 @@ public class BinaryLUT implements LUT {
     }
 
     /**
-     * @return get minimum lateral position within the template in pixels
+     * @return get the minimum lateral position within the template in pixels
      */
     @Override
     public double getMinLat() {
@@ -178,7 +184,7 @@ public class BinaryLUT implements LUT {
     }
 
     /**
-     * @return get maximum lateral position within the template in pixels
+     * @return get the maximum lateral position within the template in pixels
      */
     @Override
     public double getMaxLat() {
@@ -186,7 +192,7 @@ public class BinaryLUT implements LUT {
     }
 
     /**
-     * @return get minimum axial position in nm
+     * @return get the minimum axial position in nm
      */
     @Override
     public double getMinAx() {
@@ -194,7 +200,7 @@ public class BinaryLUT implements LUT {
     }
 
     /**
-     * @return get maximum axial position in nm
+     * @return get the maximum axial position in nm
      */
     @Override
     public double getMaxAx() {
@@ -202,7 +208,7 @@ public class BinaryLUT implements LUT {
     }
 
     /**
-     * @return get window size of the templates in pixels
+     * @return get the window size of the templates in pixels
      */
     @Override
     public int getWindowSize() {

@@ -33,7 +33,7 @@ import ij.IJ;
 
 /**
  * LUT implementation that generate 2D elliptical Gaussian functions templates
- * from a calibration
+ * from a calibration.
  * @author Fabian Hauser
  */
 public class AstigmatismLUT implements LUT {
@@ -51,6 +51,10 @@ public class AstigmatismLUT implements LUT {
     private int _pixels;
     private double[] _templates;
     
+    /**
+     * Constructor
+     * @param cali calibration curves object
+     */
     public AstigmatismLUT(Calibration cali) 
     {
         _cali = cali;
@@ -83,9 +87,11 @@ public class AstigmatismLUT implements LUT {
 	_minLat = borderLat;
 	_maxLat = windowSize - borderLat;
         
+        // calculate number of unique lateral and axial templates
         _countLat = (int)Math.floor((((getMaxLat() - getMinLat()) / dLat) + 1));
         _countAx = (int)Math.floor(((rangeAx / dAx) + 1));
         
+        // number of unique template images
         _countIndex = _countLat * _countLat * _countAx;
         _pixels = windowSize*windowSize;
         
@@ -98,6 +104,8 @@ public class AstigmatismLUT implements LUT {
         try {
             _templates = new double[size];
         }catch (OutOfMemoryError ex) {
+            System.err.println("AstigmatismLUT: OutOfMemoryError: "
+                                + ex.getMessage());
             return false;
         }
         if (_templates == null) {
@@ -157,7 +165,7 @@ public class AstigmatismLUT implements LUT {
     }
 
     /**
-     * @return get minimum lateral position within the template in pixels
+     * @return get the minimum lateral position within the template in pixels
      */
     @Override
     public double getMinLat() {
@@ -165,7 +173,7 @@ public class AstigmatismLUT implements LUT {
     }
 
     /**
-     * @return get maximum lateral position within the template in pixels
+     * @return get the maximum lateral position within the template in pixels
      */
     @Override
     public double getMaxLat() {
@@ -173,7 +181,7 @@ public class AstigmatismLUT implements LUT {
     }
 
     /**
-     * @return get minimum axial position in nm
+     * @return get the minimum axial position in nm
      */
     @Override
     public double getMinAx() {
@@ -181,7 +189,7 @@ public class AstigmatismLUT implements LUT {
     }
 
     /**
-     * @return get maximum axial position in nm
+     * @return get the maximum axial position in nm
      */
     @Override
     public double getMaxAx() {
@@ -189,7 +197,7 @@ public class AstigmatismLUT implements LUT {
     }
 
     /**
-     * @return get window size of the templates in pixels
+     * @return get the window size of the templates in pixels
      */
     @Override
     public int getWindowSize() {

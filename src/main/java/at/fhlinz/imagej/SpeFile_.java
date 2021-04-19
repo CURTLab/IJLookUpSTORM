@@ -51,9 +51,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-/**
- * @author Fabian Hauser
- */
 public class SpeFile_ implements PlugIn {
     @Override
     public void run(String arg) {

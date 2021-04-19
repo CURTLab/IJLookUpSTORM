@@ -41,6 +41,11 @@ public class FileFilterEx extends FileFilter {
     private final String _ext;
     private final String _desc;
 
+    /**
+     * Constructor
+     * @param ext File extention
+     * @param desc Filter description
+     */
     public FileFilterEx(String ext, String desc) {
         _ext = ext.toLowerCase();
         _desc = desc;

@@ -39,8 +39,8 @@
 
 #define NO_LAPACKE_LUT
 //#define USE_MKL_LUT
-#define JNI_EXPORT_LUT
-//#define DLL_EXPORT_LUT
+//#define JNI_EXPORT_LUT
+#define DLL_EXPORT_LUT
 
 #if !defined(JNI_EXPORT_LUT) && defined(DLL_EXPORT_LUT)
 #define DLL_DEF_LUT __declspec(dllexport)
