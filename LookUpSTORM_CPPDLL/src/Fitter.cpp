@@ -27,6 +27,7 @@
 #include "LinearMath.h"
 
 #include <iostream>
+#include <atomic>
 
 namespace LookUpSTORM
 {

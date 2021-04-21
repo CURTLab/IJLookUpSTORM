@@ -78,12 +78,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Program Files\Java\jdk1.6.0_45\include\win32;C:\Program Files\Java\jdk1.6.0_45\include;$(IncludePath)</IncludePath>
+    <IncludePath>.\src;.\include;.\src;C:\Program Files\Java\jdk1.6.0_45\include\win32;C:\Program Files\Java\jdk1.6.0_45\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\Java\jdk1.6.0_45\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>.\include;C:\Program Files\Java\jdk1.6.0_45\include\win32;C:\Program Files\Java\jdk1.6.0_45\include;$(IncludePath)</IncludePath>
+    <IncludePath>.\src;.\include;C:\Program Files\Java\jdk1.6.0_45\include\win32;C:\Program Files\Java\jdk1.6.0_45\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\Java\jdk1.6.0_45\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\Calibration.h" />
     <ClInclude Include="src\atlas\atlas_enum.h" />
     <ClInclude Include="src\atlas\atlas_refalias1.h" />
     <ClInclude Include="src\atlas\atlas_refalias2.h" />
@@ -158,6 +159,7 @@
     <ClInclude Include="src\atlas\atlas_reflvl3.h" />
     <ClInclude Include="src\atlas\atlas_refmisc.h" />
     <ClInclude Include="src\atlas\cblas.h" />
+    <ClInclude Include="src\brent.hpp" />
     <ClInclude Include="src\ColorMap.h" />
     <ClInclude Include="include\Common.h" />
     <ClInclude Include="include\Fitter.h" />
@@ -172,11 +174,39 @@
     <ClInclude Include="src\Vector.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\atlas\ATL_drefgemm.c" />
+    <ClCompile Include="src\atlas\ATL_drefgemmNN.c" />
+    <ClCompile Include="src\atlas\ATL_drefgemmNT.c" />
+    <ClCompile Include="src\atlas\ATL_drefgemmTN.c" />
+    <ClCompile Include="src\atlas\ATL_drefgemmTT.c" />
+    <ClCompile Include="src\atlas\ATL_drefgemv.c" />
+    <ClCompile Include="src\atlas\ATL_drefgemvN.c" />
+    <ClCompile Include="src\atlas\ATL_drefgemvT.c" />
+    <ClCompile Include="src\atlas\ATL_drefger.c" />
+    <ClCompile Include="src\atlas\ATL_drefscal.c" />
+    <ClCompile Include="src\atlas\ATL_drefswap.c" />
     <ClCompile Include="src\atlas\ATL_drefsyrk.c" />
     <ClCompile Include="src\atlas\ATL_drefsyrkLN.c" />
     <ClCompile Include="src\atlas\ATL_drefsyrkLT.c" />
     <ClCompile Include="src\atlas\ATL_drefsyrkUN.c" />
     <ClCompile Include="src\atlas\ATL_drefsyrkUT.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsm.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmLLNN.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmLLNU.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmLLTN.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmLLTU.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmLUNN.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmLUNU.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmLUTN.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmLUTU.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmRLNN.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmRLNU.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmRLTN.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmRLTU.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmRUNN.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmRUNU.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmRUTN.c" />
+    <ClCompile Include="src\atlas\ATL_dreftrsmRUTU.c" />
     <ClCompile Include="src\atlas\ATL_dreftrsv.c" />
     <ClCompile Include="src\atlas\ATL_dreftrsvLNN.c" />
     <ClCompile Include="src\atlas\ATL_dreftrsvLNU.c" />
@@ -186,6 +216,10 @@
     <ClCompile Include="src\atlas\ATL_dreftrsvUNU.c" />
     <ClCompile Include="src\atlas\ATL_dreftrsvUTN.c" />
     <ClCompile Include="src\atlas\ATL_dreftrsvUTU.c" />
+    <ClCompile Include="src\atlas\ATL_idrefamax.c" />
+    <ClCompile Include="src\atlas\cblas.cpp" />
+    <ClCompile Include="src\brent.cpp" />
+    <ClCompile Include="src\Calibration.cpp" />
     <ClCompile Include="src\ColorMap.cpp" />
     <ClCompile Include="src\Fitter.cpp" />
     <ClCompile Include="src\Image.cpp" />

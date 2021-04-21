@@ -51,6 +51,8 @@ public:
 	Matrix(size_t size1, size_t size2, Initialization init) noexcept;
 	// create matrix with array initialized to supplied value
 	Matrix(size_t size1, size_t size2, double value) noexcept;
+	// create matrix from initializer list
+	Matrix(size_t size1, size_t size2, const std::initializer_list<double>& values);
 
 	// copy-on-write methods
 	Matrix(const Matrix& image) noexcept;

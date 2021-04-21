@@ -27,67 +27,58 @@
  *
  ****************************************************************************/
 
-#ifndef VECTOR_H
-#define VECTOR_H
+#ifndef CALIBRATION_H
+#define CALIBRATION_H
 
 #include "Common.h"
 
+#include <unordered_map>
+
 namespace LookUpSTORM
 {
+using Parameters = std::unordered_map<std::string, double>;
 
-class VectorData;
+class CalibrationPrivate;
 
-/*
- * vector class with copy-on-write mechanics inspired by the GNU Scientific Library (GSL) interface
- */
-class Vector
+class DLL_DEF_LUT Calibration
 {
 public:
-	// create an empty vector with no data at all
-	Vector() noexcept;
-	// create vector with array initialized to 0.0
-	Vector(size_t size) noexcept;
-	// create vector with uninitialized array
-	Vector(size_t size, Initialization init) noexcept;
-	// create vector with array initialized to supplied value
-	Vector(size_t size, double value) noexcept;
-	// create vector from initializer list
-	Vector(const std::initializer_list<double>& values) noexcept;
+	// constructor
+	Calibration();
+	// destructor
+	~Calibration();
 
-	// copy-on-write methods
-	Vector(const Vector& image) noexcept;
-	~Vector() noexcept;
-	Vector& operator=(const Vector& other) noexcept;
+	bool load(const std::string& fileName);
 
-	// chech if MatrixData or array is null
-	bool isNull() const noexcept;
-	// check if size1/size2 is zero
-	bool isZero() const noexcept;
+	bool generateSpline();
 
-	size_t size() const noexcept;
-	size_t stride() const noexcept;
+	// return sigma or the derivs in pixesl
+	std::pair<double, double> value(double z) const;
+	std::pair<double, double> dvalue(double z) const;
+	std::tuple<double, double, double, double> valDer(double z) const;
 
-	void fill(double value) noexcept;
-	void setZero() noexcept;
+	// return number of loaded knots
+	size_t knots() const;
+	// return knot at position i in the format in {x (pixels), y (pixels), z (nm)}
+	std::tuple<double, double, double> knot(size_t i) const;
 
-	double sum() const;
+	// rotation of psf
+	double theta() const;
+	// pixels size in µm
+	double pixelSize() const;
+	// focal plane on z-axis where the curves crosses in nm
+	double focalPlane() const;
 
-	double* data() noexcept;
-	const double* constData() const noexcept;
+	double minZ() const;
+	double maxZ() const;
 
-	double &operator[](size_t i) noexcept;
-	const double& operator[](size_t i) const noexcept;
-	void operator+=(const Vector& v);
-	void operator-=(const Vector& v);
+	const Parameters& parameters() const;
 
 private:
-	VectorData* d;
+	CalibrationPrivate* const d;
 
 };
 
 } // namespace LookUpSTORM
 
-std::ostream& operator<<(std::ostream&, LookUpSTORM::Vector const&);
-
-#endif // !VECTOR_H
-
+#endif // !CALIBRATION_H

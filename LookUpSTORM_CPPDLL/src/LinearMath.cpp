@@ -29,6 +29,8 @@
 
 #include "LinearMath.h"
 
+#include <cmath>
+
 #ifdef USE_MKL_LUT
 #include <mkl_cblas.h>
 #include <mkl_lapacke.h>
@@ -37,49 +39,72 @@
 // atlas implementation
 #define INT int
 extern "C" {
+#include <float.h>
+#include "atlas/cblas.h"
 #include "atlas/atlas_reflevel2.h"
-#include "atlas/atlas_reflevel3.h"
+
+#define TREAL
+#define SHIFT
+#define TYPE double
+#define ATL_INT int
+#define ATL_CINT int
+#define ATL_rone 1.0
+#define ATL_rnone -1.0
+#define ATL_rzero 0.0
+
+#define Mabs(x) ( (x) >= 0 ? (x) : -(x) )
+#define Mmax(x, y) ( (x) > (y) ? (x) : (y) )
+#define Mmin(x, y) ( (x) > (y) ? (y) : (x) )
+
+#define ATL_L1elts 256 * 1024ul // 256 k L1 cache
+
+#define ATL_laSAFMIN DBL_MIN
+
+#define cblas_iamax cblas_idamax
+#define cblas_gemv cblas_dgemv
+#define cblas_gemm cblas_dgemm
+#define cblas_trsv cblas_dtrsv
+#define cblas_trsm cblas_dtrsm
+#define cblas_scal cblas_dscal
+#define cblas_swap cblas_dswap
+#define my_ger ATL_drefger
+
+#include "atlas/ATL_laswp.c"
+#include "atlas/ATL_getf2.c"
+#include "atlas/ATL_getrfC.c"
+#include "atlas/ATL_getrfR.c"
+#include "atlas/ATL_getrs.c"
 
 inline
-void cblas_dsyrk(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
-    const enum CBLAS_TRANSPOSE Trans, const int N, const int K,
-    const double alpha, const double* A, const int lda,
-    const double beta, double* C, const int ldc)
+int LAPACKE_dgetrf(const enum CBLAS_ORDER Order, const int M, const int N,
+    double* A, const int lda, int* ipiv)
 {
-    if (Order == CblasColMajor)
-        ATL_drefsyrk(Uplo, Trans, N, K, alpha, A, lda, beta, C, ldc);
-    else
-    {
-        CBLAS_UPLO uplo;
-        CBLAS_TRANSPOSE trans;
-        if (Uplo == CblasUpper) uplo = CblasLower;
-        else uplo = CblasUpper;
-        if (Trans == CblasNoTrans) trans = CblasTrans;
-        else trans = CblasNoTrans;
-        ATL_drefsyrk(uplo, trans, N, K, alpha, A, lda, beta, C, ldc);
-    }
+    if (Order == CblasColMajor) return(ATL_getrfC(M, N, A, lda, ipiv));
+    else return(ATL_getrfR(M, N, A, lda, ipiv));
 }
 
 inline
-void cblas_dtrsv(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
-    const enum CBLAS_TRANSPOSE TA, const enum CBLAS_DIAG Diag,
-    const int N, const double* A, const int lda, double* x,
-    const int incX)
+int LAPACKE_dgetrs(const enum CBLAS_ORDER Order, char TransA,
+    const int N, const int NRHS, const double* A, const int lda,
+    const int* ipiv, double* B, const int ldb)
 {
-    if (incX < 0) x += ((1 - N) * incX);
-    if (Order == CblasColMajor)
-        ATL_dreftrsv(Uplo, TA, Diag, N, A, lda, x, incX);
-    else
-    {
-        enum CBLAS_UPLO uplo;
-        enum CBLAS_TRANSPOSE ta;
-        uplo = ((Uplo == CblasUpper) ? CblasLower : CblasUpper);
-        if (TA == CblasNoTrans) ta = CblasTrans;
-        else ta = CblasNoTrans;
-        ATL_dreftrsv(uplo, ta, Diag, N, A, lda, x, incX);
-    }
+    CBLAS_TRANSPOSE Trans = TransA == 'T' ? CblasTrans : TransA == 'C' ? CblasConjTrans : CblasNoTrans;
+    if (Order != CblasRowMajor && Order != CblasColMajor)
+        return -1;
+    if (Trans != CblasNoTrans && Trans != CblasTrans && Trans != CblasConjTrans)
+        return -2;
+    if (lda < N || lda < 1)
+        return -3;
+    if (ldb < N || ldb < 1)
+        return -4;
+    ATL_getrs(Order, Trans, N, NRHS, A, lda, ipiv, B, ldb);
+    return 0;
+}
+
+#define LAPACK_ROW_MAJOR CblasRowMajor
+#define LAPACK_COL_MAJOR CblasColMajor
+
 } // extern "C"
-}
 #endif // USE_MKL_LUT
 
 #include <stdexcept>
@@ -129,6 +154,22 @@ int BLAS::dtrsv(UPLO_t Uplo, TRANSPOSE_t Trans, DIAG_t Diag, const Matrix& A, Ve
     cblas_dtrsv(CblasRowMajor, (CBLAS_UPLO)Uplo, (CBLAS_TRANSPOSE)Trans, (CBLAS_DIAG)Diag, INT(N), A.constData(),
         INT(A.tda()), X.data(), INT(X.stride()));
     return LIN_SUCCESS;
+}
+
+int LAPACKE::dgetrf(Matrix& A, int* ipiv)
+{
+    if (A.isNull())
+        return LIN_ERR_NULL_ARRAY;
+    return LAPACKE_dgetrf(LAPACK_ROW_MAJOR, INT(A.size1()), INT(A.size2()), A.data(), INT(A.tda()), ipiv);
+}
+
+int LAPACKE::dgetrs(TRANSPOSE_t Trans, const Matrix& A, int* ipiv, Vector& b)
+{
+    if (A.isNull() || b.isNull())
+        return LIN_ERR_NULL_ARRAY;
+    return LAPACKE_dgetrs(LAPACK_ROW_MAJOR, Trans, INT(A.size1()), INT(1), 
+                          A.constData(), INT(A.size2()), 
+                          ipiv, b.data(), INT(b.size()));
 }
 
 #ifndef NO_LAPACKE_LUT

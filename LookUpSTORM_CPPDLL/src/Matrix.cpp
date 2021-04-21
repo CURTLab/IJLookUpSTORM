@@ -35,6 +35,7 @@
 #include <iostream>
 #include <iomanip>
 #include <numeric>
+#include <stdexcept>
 
 namespace LookUpSTORM
 {
@@ -98,6 +99,14 @@ Matrix::Matrix(size_t size1, size_t size2, double value) noexcept
     : d(new MatrixData(size1, size2))
 {
     std::fill_n(d->data, d->size(), value);
+}
+
+LookUpSTORM::Matrix::Matrix(size_t size1, size_t size2, const std::initializer_list<double>& values)
+    : d(new MatrixData(size1, size2))
+{
+    if (size1 * size2 != values.size())
+        throw std::runtime_error("number of value list items is not equal to the supplied matrix size!");
+    std::copy_n(values.begin(), values.size(), d->data);
 }
 
 Matrix::Matrix(const Matrix& other) noexcept

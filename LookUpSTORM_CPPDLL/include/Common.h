@@ -37,6 +37,9 @@
 #undef min
 #undef max
 
+//#define DLL_EXPORT_LUT
+//#define NO_LAPACKE_LUT
+
 #if !defined(JNI_EXPORT_LUT) && defined(DLL_EXPORT_LUT)
 #define DLL_DEF_LUT __declspec(dllexport)
 #elif !defined(JNI_EXPORT_LUT) && defined(DLL_IMPORT_LUT) 

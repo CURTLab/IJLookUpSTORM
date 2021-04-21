@@ -54,6 +54,98 @@
     <ClCompile Include="src\atlas\ATL_dreftrsvUTU.c">
       <Filter>ATLAS</Filter>
     </ClCompile>
+    <ClCompile Include="src\atlas\ATL_drefgemm.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_drefgemmNN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_drefgemmNT.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_drefgemmTN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_drefgemmTT.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_idrefamax.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_drefscal.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_drefswap.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsm.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmLLNN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmLLNU.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmLLTN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmLLTU.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmLUNN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmLUNU.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmLUTN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmLUTU.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmRLNN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmRLNU.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmRLTN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmRLTU.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmRUNN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmRUNU.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmRUTN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_dreftrsmRUTU.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_drefger.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\cblas.cpp">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_drefgemv.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_drefgemvN.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\atlas\ATL_drefgemvT.c">
+      <Filter>ATLAS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Calibration.cpp" />
+    <ClCompile Include="src\brent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ColorMap.h" />
@@ -101,6 +193,8 @@
     <ClInclude Include="src\atlas\cblas.h">
       <Filter>ATLAS</Filter>
     </ClInclude>
+    <ClInclude Include="include\Calibration.h" />
+    <ClInclude Include="src\brent.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ATLAS">

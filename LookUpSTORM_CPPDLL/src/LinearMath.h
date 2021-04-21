@@ -60,19 +60,35 @@ namespace BLAS {
     // solves the triangular system of linear equations
     int dtrsv(UPLO_t Uplo, TRANSPOSE_t Trans,
               DIAG_t Diag, const Matrix& A, Vector& X);
+
+    int dgemv(TRANSPOSE_t TransA, double alpha,
+              const Matrix& A, const Vector& X,
+              double beta, Vector& Y);
+
+    int dgemm(TRANSPOSE_t TransA, TRANSPOSE_t TransB,
+              double alpha, const Matrix& A, const Matrix& B, 
+              double beta, Matrix& C);
 };
 
-#ifndef NO_LAPACKE_LUT
 namespace LAPACKE {
     enum UPLO_t : char {
         U = 'U',
         L = 'L'
     };
+    enum TRANSPOSE_t : char {
+        NoTrans = 'N',
+        Trans = 'T',
+        ConjTrans = 'C'
+    };
 
+    int dgetrf(Matrix& A, int* ipiv);
+    int dgetrs(TRANSPOSE_t Trans, const Matrix& A, int* ipiv, Vector& b);
+
+#ifndef NO_LAPACKE_LUT
     int dsysv(UPLO_t uplo, Matrix& A, int* ipiv, Vector& b);
+#endif // NO_LAPACKE
 
 };
-#endif // NO_LAPACKE
 
 } // namespace LookUpSTORM
 

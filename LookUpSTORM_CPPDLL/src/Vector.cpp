@@ -82,6 +82,12 @@ Vector::Vector(size_t size, double value) noexcept
     std::fill(d->data, d->data + size, value);
 }
 
+Vector::Vector(const std::initializer_list<double>& values) noexcept
+    : d(new VectorData(values.size()))
+{
+    std::copy(values.begin(), values.end(), d->data);
+}
+
 Vector::Vector(const Vector& other) noexcept
     : d(other.d)
 {
