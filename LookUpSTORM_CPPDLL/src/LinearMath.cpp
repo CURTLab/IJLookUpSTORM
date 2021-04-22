@@ -120,13 +120,10 @@ int BLAS::dsyrk(UPLO_t Uplo, TRANSPOSE_t Trans, double alpha, const Matrix& A, d
     const size_t M = C.size1(), N = C.size2();
     const size_t J = (Trans == CblasNoTrans) ? A.size1() : A.size2();
     const size_t K = (Trans == CblasNoTrans) ? A.size2() : A.size1();
-    if (M != N)
-    {
+    if (M != N) {
         std::cerr << "BLAS: matrix C must be square" << std::endl;
         return LIN_ERR_NOT_SQUARE;
-    }
-    else if (N != J)
-    {
+    } else if (N != J) {
         std::cerr << "BLAS: invalid length" << std::endl;
         return LIN_ERR_SIZE;
     }
@@ -140,13 +137,10 @@ int BLAS::dtrsv(UPLO_t Uplo, TRANSPOSE_t Trans, DIAG_t Diag, const Matrix& A, Ve
 {
     const size_t M = A.size1(), N = A.size2();
 
-    if (M != N)
-    {
+    if (M != N) {
         std::cerr << "BLAS: matrix C must be square" << std::endl;
         return LIN_ERR_NOT_SQUARE;
-    }
-    else if (N != X.size())
-    {
+    } else if (N != X.size()) {
         std::cerr << "BLAS: invalid length" << std::endl;
         return LIN_ERR_SIZE;
     }
@@ -154,6 +148,41 @@ int BLAS::dtrsv(UPLO_t Uplo, TRANSPOSE_t Trans, DIAG_t Diag, const Matrix& A, Ve
     cblas_dtrsv(CblasRowMajor, (CBLAS_UPLO)Uplo, (CBLAS_TRANSPOSE)Trans, (CBLAS_DIAG)Diag, INT(N), A.constData(),
         INT(A.tda()), X.data(), INT(X.stride()));
     return LIN_SUCCESS;
+}
+
+int LookUpSTORM::BLAS::dgemv(TRANSPOSE_t TransA, double alpha, const Matrix& A, const Vector& X, double beta, Vector& Y)
+{
+    const size_t M = A.size1(), N = A.size2();
+
+    if (((TransA == CblasNoTrans) && (N == X.size()) && (M == Y.size()))
+        || ((TransA == CblasTrans) && (M == X.size()) && (N == Y.size()))) 
+    {
+        cblas_dgemv(CblasRowMajor, (CBLAS_TRANSPOSE)TransA, INT(M), INT(N), 
+            alpha, A.constData(), INT(A.tda()), X.constData(), INT(X.stride()), beta, 
+            Y.data(), INT(Y.stride()));
+        return LIN_SUCCESS;
+    }
+    std::cerr << "BLAS: invalid size" << std::endl;
+    return LIN_ERR_SIZE;
+}
+
+int LookUpSTORM::BLAS::dgemm(TRANSPOSE_t TransA, TRANSPOSE_t TransB, double alpha, const Matrix& A, const Matrix& B, double beta, Matrix& C)
+{
+    const size_t M = C.size1(), N = C.size2();
+    const size_t MA = (TransA == CblasNoTrans) ? A.size1() : A.size2();
+    const size_t NA = (TransA == CblasNoTrans) ? A.size2() : A.size1();
+    const size_t MB = (TransB == CblasNoTrans) ? B.size1() : B.size2();
+    const size_t NB = (TransB == CblasNoTrans) ? B.size2() : B.size1();
+
+    if ((M == MA) && (N == NB) && (NA == MB)) {
+        cblas_dgemm(CblasRowMajor, (CBLAS_TRANSPOSE)TransA, 
+            (CBLAS_TRANSPOSE)TransB, INT(M), INT(N), INT(NA),
+            alpha, A.constData(), INT(A.tda()), B.constData(), 
+            INT(B.tda()), beta, C.data(), INT(C.tda()));
+        return LIN_SUCCESS;
+    }
+    std::cerr << "BLAS: invalid size" << std::endl;
+    return LIN_ERR_SIZE;
 }
 
 int LAPACKE::dgetrf(Matrix& A, int* ipiv)

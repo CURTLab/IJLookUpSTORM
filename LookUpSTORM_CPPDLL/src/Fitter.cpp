@@ -55,6 +55,11 @@ public:
 		, epsilon(1E-2)
 		, maxIter(5)
 	{}
+	inline ~FitterPrivate() 
+	{
+		if (tableAllocated && (lookup != nullptr))
+			delete[] lookup;
+	}
 
 	size_t lookupIndex(double x, double y, double z) const;
 	const double* get(double x, double y, double z) const;
@@ -121,21 +126,20 @@ Fitter::Fitter()
 Fitter::~Fitter()
 {
 	delete d;
-	release();
 }
 
 void Fitter::release()
 {
-	if (d->tableAllocated) {
+	if (d->tableAllocated && (d->lookup != nullptr)) {
 		delete[] d->lookup;
 		d->lookup = nullptr;
 		d->tableAllocated = false;
-		d->x0 = {};
-		d->x1 = {};
-		d->JTJ = {};
-		d->countIndex = 0;
-		d->winSize = 0;
 	}
+	d->x0 = {};
+	d->x1 = {};
+	d->JTJ = {};
+	d->countIndex = 0;
+	d->winSize = 0;
 }
 
 bool Fitter::isReady() const
@@ -266,6 +270,9 @@ bool Fitter::setLookUpTable(const double* data, size_t dataSize, bool allocated,
 		std::cerr << "LookUpSTORd->CPPDLL: setLookUpTable: Lateral border is less than one! (Lateral range: " << rangeLat << ")" << std::endl;
 		return false;
 	}
+
+	if ((d->lookup != nullptr) && d->tableAllocated)
+		release();
 
 	d->lookup = data;
 	d->tableAllocated = allocated;

@@ -32,8 +32,10 @@
  
 #include <atomic>
 #include <list>
+#include <functional>
 #include "Fitter.h"
 #include "Renderer.h"
+#include "Calibration.h"
 
 namespace LookUpSTORM
 {
@@ -50,6 +52,13 @@ public:
 	~Controller();
 
 	bool isReady() const;
+
+	// generate astigmatism LUT from calibration
+	// the callback function can be used to show the progress
+	bool generateFromCalibration(const Calibration &cali, size_t windowSize, 
+		double dLat, double dAx, double rangeLat, double rangeAx,
+		std::function<void(size_t index, size_t max)> callback = [](size_t,size_t){}
+	);
 
 	// thread-safe
 	bool isLocFinished() const;

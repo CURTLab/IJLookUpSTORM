@@ -44,7 +44,6 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setLookUpTable___3D
 (JNIEnv* env, jobject obj, jdoubleArray lookup, jint windowSize, jdouble dLat, jdouble dAx, jdouble rangeLat, jdouble rangeAx)
 {
 	const int size = env->GetArrayLength(lookup);
-	Java_at_fhlinz_imagej_LookUpSTORM_releaseLookUpTable(env, obj);
 
 	jboolean iscopy = false;
 	jdouble* data = (jdouble*)env->GetPrimitiveArrayCritical(lookup, &iscopy);

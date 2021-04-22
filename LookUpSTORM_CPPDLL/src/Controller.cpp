@@ -119,6 +119,85 @@ bool Controller::isReady() const
     return d->renderer.isReady() && d->fitter.isReady() && (d->imageWidth > 0) && (d->imageHeight > 0);
 }
 
+bool LookUpSTORM::Controller::generateFromCalibration(const Calibration& cali, size_t windowSize, 
+    double dLat, double dAx, double rangeLat, double rangeAx, 
+    std::function<void(size_t index, size_t max)> callback)
+{
+    const size_t n = windowSize * windowSize;
+
+    size_t i = 0;
+    const double borderLat = std::floor((windowSize - rangeLat) / 2);
+    if (borderLat < 1.0) {
+        std::cerr << "Controller: Border during generation is smaller than 1!" << std::endl;
+        return false;
+    }
+
+    // calculate spatial minimas and maximas
+    const double minLat = borderLat;
+    const double maxLat = windowSize - borderLat;
+    const double minAx = -rangeAx * 0.5;
+    const double maxAx = rangeAx * 0.5;
+
+    // calculate amount of template images
+    const size_t countLat = static_cast<size_t>(std::floor((((maxLat - minLat) / dLat) + 1)));
+    const size_t countAx = static_cast<size_t>(std::floor(((rangeAx / dAx) + 1)));
+    const size_t countIndex = countLat * countLat * countAx;
+
+    const size_t stride = windowSize * windowSize * 4ull;
+
+    // rotation of PSF from calibration
+    const double sina = sin(cali.theta());
+    const double cosa = cos(cali.theta());
+
+    double sx, sy, dsx, dsy;
+
+    const size_t dataSize = countIndex * stride;
+    double *data = new double[dataSize];
+    double* pixels = data;
+    for (i = 0; i < countIndex; ++i) {
+        const size_t zidx = i % countAx;
+        const size_t yidx = (i / countAx) % countLat;
+        const size_t xidx = i / (countAx * countLat);
+
+        const double x = minLat + xidx * dLat;
+        const double y = minLat + yidx * dLat;
+        const double z = minAx + zidx * dAx;
+
+        std::tie(sx, sy, dsx, dsy) = cali.valDer(z + cali.focalPlane());
+
+        // draw template image of astigmatism PSF from calibration at x,y,z
+        for (size_t j = 0; j < n; ++j) {
+            const size_t yy = j / windowSize;
+            const size_t xx = j - yy * windowSize;
+
+            const double xi = (xx - x);
+            const double yi = (yy - y);
+            const double tx = xi * cosa + yi * sina, tx2 = tx * tx;
+            const double ty = -xi * sina + yi * cosa, ty2 = ty * ty;
+            const double sx2 = sx * sx, sx3 = sx2 * sx;
+            const double sy2 = sy * sy, sy3 = sy2 * sy;
+            const double e = exp(-0.5 * tx2 / sx2 - 0.5 * ty2 / sy2);
+
+            *pixels++ = e;
+            *pixels++ = (tx * cosa / sx2 - ty * sina / sy2) * e;
+            *pixels++ = (tx * sina / sx2 + ty * cosa / sy2) * e;
+            *pixels++ = (tx2 * dsx / sx3 + ty2 * dsy / sy3) * e;
+        }
+
+        callback(i, countIndex);
+    }
+
+    if (!d->fitter.setLookUpTable(data, dataSize, true, windowSize, dLat, dAx, rangeLat, rangeAx)) {
+        std::cerr << "Controller: Could not set generated LUT!" << std::endl;
+        return false;
+    }
+
+    d->renderer.setSettings(minAx, maxAx, dAx, 1.f);
+    reset();
+
+    return true;
+}
+
 bool Controller::isLocFinished() const
 {
     return d->isLocFinished.load();

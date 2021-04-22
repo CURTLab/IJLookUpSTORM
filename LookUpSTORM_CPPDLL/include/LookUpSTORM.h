@@ -35,5 +35,6 @@
 #include "Fitter.h"
 #include "Renderer.h"
 #include "Image.h"
+#include "Calibration.h"
 
 #endif // LOOKUPSTORM_H

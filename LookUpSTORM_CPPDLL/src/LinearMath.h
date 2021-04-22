@@ -61,10 +61,12 @@ namespace BLAS {
     int dtrsv(UPLO_t Uplo, TRANSPOSE_t Trans,
               DIAG_t Diag, const Matrix& A, Vector& X);
 
+    // matrix-vector multiplication
     int dgemv(TRANSPOSE_t TransA, double alpha,
               const Matrix& A, const Vector& X,
               double beta, Vector& Y);
 
+    // matrix-matrix multiplication
     int dgemm(TRANSPOSE_t TransA, TRANSPOSE_t TransB,
               double alpha, const Matrix& A, const Matrix& B, 
               double beta, Matrix& C);
