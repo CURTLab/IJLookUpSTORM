@@ -1,10 +1,10 @@
 
 extern "C" {
 
-#include "atlas/cblas.h"
-#include "atlas/atlas_reflevel1.h"
-#include "atlas/atlas_reflevel2.h"
-#include "atlas/atlas_reflevel3.h"
+#include "cblas.h"
+#include "atlas_reflevel1.h"
+#include "atlas_reflevel2.h"
+#include "atlas_reflevel3.h"
 
 }
 

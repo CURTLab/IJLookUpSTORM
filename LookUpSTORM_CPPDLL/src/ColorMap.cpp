@@ -29,6 +29,8 @@
 
 #include "ColorMap.h"
 
+#include <assert.h>
+
 #include "Common.h"
 
 using namespace LookUpSTORM;
@@ -95,6 +97,10 @@ uint32_t ColorMap::cachedRgb(double value) const
 {
     const size_t i = static_cast<size_t>(std::round((value - m_min) / m_step));
     //std::cerr << i << ", " << value << ": r:" << (uint32_t)red(m_lut[i]) << " g:" << (uint32_t)green(m_lut[i]) << " b:" << (uint32_t)blue(m_lut[i]) << std::endl;
+#ifndef NDEBUG
+    if (i >= m_entries)
+        return BLACK;
+#endif
     return m_lut[i];
 }
 

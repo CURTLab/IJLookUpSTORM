@@ -12,6 +12,7 @@ cmake_minimum_required (VERSION 3.9)
 project (LookUpSTORM_CPPDLL VERSION 0.1 DESCRIPTION "Real-Time LookUp STORM Analysis")
 
 set(SOURCE_FILES 
+    LookUpSTORM_CPPDLL/src/Calibration.cpp
     LookUpSTORM_CPPDLL/src/ColorMap.cpp
 	LookUpSTORM_CPPDLL/src/Controller.cpp
 	LookUpSTORM_CPPDLL/src/Fitter.cpp
@@ -26,6 +27,7 @@ set(SOURCE_FILES
 
 set(PUBLIC_LIB_HEADERS 
 	LookUpSTORM_CPPDLL/include/Common.h
+	LookUpSTORM_CPPDLL/include/Calibration.h
 	LookUpSTORM_CPPDLL/include/Controller.h
 	LookUpSTORM_CPPDLL/include/Fitter.h
 	LookUpSTORM_CPPDLL/include/Image.h
@@ -47,6 +49,10 @@ set_target_properties(LookUpSTORM_CPPDLL PROPERTIES VERSION ${PROJECT_VERSION})
 
 target_include_directories(LookUpSTORM_CPPDLL PRIVATE LookUpSTORM_CPPDLL/src)
 target_include_directories(LookUpSTORM_CPPDLL PUBLIC LookUpSTORM_CPPDLL/include)
+
+add_library(BRENT_LookUpSTORM STATIC LookUpSTORM_CPPDLL/src/brent.cpp)
+target_include_directories(BRENT_LookUpSTORM PRIVATE LookUpSTORM_CPPDLL/src)
+target_link_libraries(LookUpSTORM_CPPDLL BRENT_LookUpSTORM)
 
 if(JNI_EXPORT)
 	find_package(JNI REQUIRED)
@@ -85,6 +91,36 @@ else(USE_MKL)
 		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsvUNU.c
 		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsvUTN.c
 		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsvUTU.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_drefgemm.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_drefgemmNN.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_drefgemmNT.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_drefgemmTN.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_drefgemmTT.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_drefgemv.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_drefgemvN.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_drefgemvT.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_drefger.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_drefscal.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_drefswap.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsm.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmLLNN.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmLLNU.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmLLTN.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmLLTU.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmLUNN.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmLUNU.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmLUTN.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmLUTU.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmRLNN.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmRLNU.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmRLTN.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmRLTU.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmRUNN.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmRUNU.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmRUTN.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmRUTU.c
+		LookUpSTORM_CPPDLL/src/atlas/ATL_idrefamax.c
+		LookUpSTORM_CPPDLL/src/atlas/cblas.cpp
 	)
 	
 	add_library(LookUpSTORM_ATLAS STATIC ${ATLAS_SOURCE_FILES})
