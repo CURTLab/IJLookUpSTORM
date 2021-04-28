@@ -43,6 +43,10 @@ option(JNI_EXPORT "Export Symbols for JNI" False)
 
 set(CMAKE_DEBUG_POSTFIX d)
 
+if(JNI_EXPORT)
+	list(APPEND SOURCE_FILES LookUpSTORM_CPPDLL/src/LookUpSTORM_CPPDLL.cpp)
+endif(JNI_EXPORT)
+
 add_library(LookUpSTORM_CPPDLL SHARED ${SOURCE_FILES})
 
 set_target_properties(LookUpSTORM_CPPDLL PROPERTIES VERSION ${PROJECT_VERSION})	
@@ -50,16 +54,15 @@ set_target_properties(LookUpSTORM_CPPDLL PROPERTIES VERSION ${PROJECT_VERSION})
 target_include_directories(LookUpSTORM_CPPDLL PRIVATE LookUpSTORM_CPPDLL/src)
 target_include_directories(LookUpSTORM_CPPDLL PUBLIC LookUpSTORM_CPPDLL/include)
 
-add_library(BRENT_LookUpSTORM STATIC LookUpSTORM_CPPDLL/src/brent.cpp)
-target_include_directories(BRENT_LookUpSTORM PRIVATE LookUpSTORM_CPPDLL/src)
-target_link_libraries(LookUpSTORM_CPPDLL BRENT_LookUpSTORM)
+add_library(LookUpSTORM_BRENT STATIC LookUpSTORM_CPPDLL/src/brent.cpp)
+target_include_directories(LookUpSTORM_BRENT PRIVATE LookUpSTORM_CPPDLL/src)
+target_link_libraries(LookUpSTORM_CPPDLL LookUpSTORM_BRENT)
 
 if(JNI_EXPORT)
 	find_package(JNI REQUIRED)
 	include_directories(LookUpSTORM_CPPDLL ${JNI_INCLUDE_DIRS})
 	target_link_libraries(LookUpSTORM_CPPDLL ${JNI_LIBRARIES})
 	add_definitions(-DJNI_EXPORT_LUT)
-	list(APPEND SOURCE_FILES LookUpSTORM_CPPDLL/src/LookUpSTORM_CPPDLL.cpp)
 else(JNI_EXPORT)
 	add_definitions(-DDLL_EXPORT_LUT)
 	set_target_properties(LookUpSTORM_CPPDLL PROPERTIES PUBLIC_HEADER "${PUBLIC_LIB_HEADERS}")
@@ -121,6 +124,7 @@ else(USE_MKL)
 		LookUpSTORM_CPPDLL/src/atlas/ATL_dreftrsmRUTU.c
 		LookUpSTORM_CPPDLL/src/atlas/ATL_idrefamax.c
 		LookUpSTORM_CPPDLL/src/atlas/cblas.cpp
+		LookUpSTORM_CPPDLL/src/atlas/lapack.c
 	)
 	
 	add_library(LookUpSTORM_ATLAS STATIC ${ATLAS_SOURCE_FILES})

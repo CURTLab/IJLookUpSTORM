@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  */
-//#include "atlas_misc.h"
-//#include "atlas_lapack.h"
+#include "atlas_misc.h"
+#include "atlas_lapack.h"
 
 void ATL_getrs(const enum CBLAS_ORDER Order, const enum CBLAS_TRANSPOSE Trans,
                const int N, const int NRHS, const TYPE *A, const int lda,

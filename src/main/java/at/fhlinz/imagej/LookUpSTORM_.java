@@ -80,7 +80,7 @@ public class LookUpSTORM_ implements PlugIn {
        // start ImageJ
        new ImageJ();
        
-       /*String path = "C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/Sim/";
+       String path = "C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/Sim/";
        String cali = "sequence-as-stack-Beads-AS-Exp.yaml";
        String img = "sunburst2.SPE";
        //ij.ImagePlus image = SpeFile_.open(path, "NewPlatelets_c500_f700_50mM_TestRT_red_015.SPE");
@@ -88,6 +88,6 @@ public class LookUpSTORM_ implements PlugIn {
         //ij.ImagePlus image = SpeFile_.open(path, "cross.SPE");
        image.show();
        
-       IJ.runPlugIn(clazz.getName(), path + cali);*/
+       IJ.runPlugIn(clazz.getName(), path + cali);
    }
 }

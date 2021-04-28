@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  */
-//#include "atlas_lapack.h"
+#include "atlas_lapack.h"
 
 void ATL_laswp(const int N, TYPE *A, const int lda0, const int K1,
                const int K2, const int *piv, const int inci)

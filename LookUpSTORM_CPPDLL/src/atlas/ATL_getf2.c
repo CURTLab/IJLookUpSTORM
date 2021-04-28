@@ -1,8 +1,6 @@
-#if 0
 #include "atlas_lapack.h"
 #include "atlas_level2.h"
 #include "atlas_lamch.h"
-#endif
 
 #ifdef TCPLX
    #define my_ger2 Mjoin(PATL,ger2u)
