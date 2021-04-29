@@ -144,7 +144,7 @@ void Fitter::release()
 
 bool Fitter::isReady() const
 {
-	return (d->lookup != nullptr) && (d->countIndex > 0) && (d->winSize > 0);
+	return (d->lookup != nullptr) && (d->countIndex > 1);
 }
 
 bool Fitter::fitSingle(const ImageU16& roi, Molecule& mol)
@@ -308,6 +308,11 @@ bool Fitter::setLookUpTable(const double* data, size_t dataSize, bool allocated,
 const double* Fitter::lookUpTablePtr() const
 {
 	return d->lookup;
+}
+
+const double* LookUpSTORM::Fitter::templatePtr(double x, double y, double z) const
+{
+	return d->get(x, y, z);
 }
 
 size_t Fitter::windowSize() const

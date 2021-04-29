@@ -118,7 +118,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_USE_MATH_DEFINES;NOMINMAX;DLL_EXPORT_LUT;NO_LAPACKE_LUT;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Program Files\Java\jdk1.6.0_45\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -134,7 +134,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_USE_MATH_DEFINES;NOMINMAX;DLL_EXPORT_LUT;NO_LAPACKE_LUT;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Program Files\Java\jdk1.6.0_45\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\Calibration.h" />
+    <ClInclude Include="include\LUT.h" />
     <ClInclude Include="src\atlas\atlas_enum.h" />
     <ClInclude Include="src\atlas\atlas_refalias1.h" />
     <ClInclude Include="src\atlas\atlas_refalias2.h" />
@@ -227,6 +228,7 @@
     <ClCompile Include="src\LocalMaximumSearch.cpp" />
     <ClCompile Include="src\Controller.cpp" />
     <ClCompile Include="src\LookUpSTORM_CPPDLL.cpp" />
+    <ClCompile Include="src\LUT.cpp" />
     <ClCompile Include="src\Matrix.cpp" />
     <ClCompile Include="src\Rect.cpp" />
     <ClCompile Include="src\Renderer.cpp" />

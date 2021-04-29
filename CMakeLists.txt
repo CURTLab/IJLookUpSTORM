@@ -23,6 +23,7 @@ set(SOURCE_FILES
 	LookUpSTORM_CPPDLL/src/Rect.cpp
 	LookUpSTORM_CPPDLL/src/Renderer.cpp
 	LookUpSTORM_CPPDLL/src/Vector.cpp
+	LookUpSTORM_CPPDLL/src/LUT.cpp
 )
 
 set(PUBLIC_LIB_HEADERS 
@@ -34,6 +35,7 @@ set(PUBLIC_LIB_HEADERS
 	LookUpSTORM_CPPDLL/include/LookUpSTORM.h
 	LookUpSTORM_CPPDLL/include/Rect.h
 	LookUpSTORM_CPPDLL/include/Renderer.h
+	LookUpSTORM_CPPDLL/include/LUT.h
 )
 
 add_definitions(-DNO_LAPACKE_LUT)
@@ -42,6 +44,10 @@ option(USE_MKL "Use MKL" False)
 option(JNI_EXPORT "Export Symbols for JNI" False)
 
 set(CMAKE_DEBUG_POSTFIX d)
+
+if (MSVC)
+	add_definitions(-D_USE_MATH_DEFINES -DNOMINMAX)
+endif(MSVC)
 
 if(JNI_EXPORT)
 	list(APPEND SOURCE_FILES LookUpSTORM_CPPDLL/src/LookUpSTORM_CPPDLL.cpp)
@@ -73,6 +79,9 @@ install(TARGETS LookUpSTORM_CPPDLL
 		PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 if(USE_MKL)
+	#find_package(BLAS REQUIRED)
+	#find_package(LAPACK REQUIRED)
+	
 	find_package(MKL REQUIRED)
 	include_directories(LookUpSTORM_CPPDLL ${MKL_INCLUDE_DIR})
 	target_link_libraries(LookUpSTORM_CPPDLL ${MKL_LIBRARIES})

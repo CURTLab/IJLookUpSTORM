@@ -48,6 +48,8 @@ public:
 			double y;
 			double z;
 			double frame;
+			double xfit;
+			double yfit;
 			double time_us;
 		};
 		double data[7];
@@ -64,14 +66,25 @@ public:
 
 	void release();
 
+	// returns true if the LUT is successfully set and there are more than one templates
 	bool isReady() const;
 
 	bool fitSingle(const ImageU16& roi, Molecule& mol);
 
 	bool setLookUpTable(const double* data, size_t dataSize, bool allocated, int windowSize, double dLat, double dAx, double rangeLat, double rangeAx);
 
+	// returns a pointer to the start of the LUT array
 	const double* lookUpTablePtr() const;
 
+	// returns a pointer to the start of a template image at x,y,z
+	// the pointer is 4 * windowSize * windowSize long and 
+	// contains the derivatives:
+	//   - dx at the offset (1 * windowSize * windowSize)
+	//   - dy at the offset (2 * windowSize * windowSize)
+	//   - dz at the offset (3 * windowSize * windowSize)
+	const double* templatePtr(double x, double y, double z) const;
+
+	// returns true if the template at the position x,y,z is valid
 	constexpr bool isValid(double x, double y, double z) const;
 
 	size_t windowSize() const;
@@ -80,6 +93,7 @@ public:
 	double rangeLat() const;
 	double minLat() const;
 	double maxLat() const;
+
 	double deltaAx() const;
 	double rangeAx() const;
 	double minAx() const;

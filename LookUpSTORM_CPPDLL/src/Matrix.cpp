@@ -36,6 +36,7 @@
 #include <iomanip>
 #include <numeric>
 #include <stdexcept>
+#include <cassert>
 
 namespace LookUpSTORM
 {
@@ -209,11 +210,13 @@ const double* Matrix::constData() const noexcept
 
 double& Matrix::operator()(size_t i, size_t j) noexcept
 {
+    assert((d != nullptr) && (i < d->size1) && (j < d->size2));
     return d->data[i * d->tda + j];
 }
 
 const double& Matrix::operator()(size_t i, size_t j) const noexcept
 {
+    assert((d != nullptr) && (i < d->size1) && (j < d->size2));
     return d->data[i * d->tda + j];
 }
 

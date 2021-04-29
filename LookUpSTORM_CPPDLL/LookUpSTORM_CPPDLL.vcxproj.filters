@@ -146,6 +146,7 @@
     </ClCompile>
     <ClCompile Include="src\Calibration.cpp" />
     <ClCompile Include="src\brent.cpp" />
+    <ClCompile Include="src\LUT.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ColorMap.h" />
@@ -195,6 +196,7 @@
     </ClInclude>
     <ClInclude Include="include\Calibration.h" />
     <ClInclude Include="src\brent.hpp" />
+    <ClInclude Include="include\LUT.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ATLAS">

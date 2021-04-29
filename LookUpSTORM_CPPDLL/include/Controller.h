@@ -41,6 +41,7 @@ namespace LookUpSTORM
 {
 
 class ControllerPrivate;
+class LUT;
 
 class DLL_DEF_LUT Controller final
 {
@@ -53,11 +54,18 @@ public:
 
 	bool isReady() const;
 
-	// generate astigmatism LUT from calibration
+	// generate LUT from an object derived from the LUT class
 	// the callback function can be used to show the progress
-	bool generateFromCalibration(const Calibration &cali, size_t windowSize, 
+	bool generate(LUT& lut, size_t windowSize,
 		double dLat, double dAx, double rangeLat, double rangeAx,
 		std::function<void(size_t index, size_t max)> callback = [](size_t,size_t){}
+	);
+
+	// generate astigmatism LUT from calibration
+	// the callback function can be used to show the progress
+	bool generateFromCalibration(const Calibration& cali, size_t windowSize,
+		double dLat, double dAx, double rangeLat, double rangeAx,
+		std::function<void(size_t index, size_t max)> callback = [](size_t, size_t) {}
 	);
 
 	// thread-safe
@@ -119,6 +127,9 @@ public:
 	Renderer& renderer();
 	void setRenderScale(double scale);
 	void setRenderSize(int width, int height);
+
+	bool calculateCRLB(const Molecule &mol, double *crlb, const double adu, 
+		const double gain, const double offset, const double pixelSize) const;
 
 	void reset();
 

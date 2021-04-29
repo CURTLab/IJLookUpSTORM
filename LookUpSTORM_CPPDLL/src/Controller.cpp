@@ -35,6 +35,8 @@
 #include <cmath>
 
 #include "LocalMaximumSearch.h"
+#include "LinearMath.h"
+#include "LUT.h"
 
 #undef min
 #undef max
@@ -78,8 +80,54 @@ public:
     std::list<Molecule> mols;
     Renderer renderer;
     std::atomic<bool> verbose;
+    Calibration cali;
 
 };
+
+class AstigmatismLUT : public LUT
+{
+    const Calibration& m_cali;
+    double m_sina;
+    double m_cosa;
+    double m_sx, m_sy, m_dsx, m_dsy;
+public:
+    AstigmatismLUT(const Calibration& cali)
+        : m_cali(cali)
+        // rotation of PSF from calibration
+        , m_sina(sin(cali.theta()))
+        , m_cosa(cos(cali.theta()))
+        , m_sx(0.0), m_sy(0.0), m_dsx(0.0), m_dsy(0.0)
+    {}
+
+protected:
+    inline virtual void preTemplates(size_t windowSize, double dLat, double dAx, double rangeLat, double rangeAx) {}
+    inline virtual void endTemplate(size_t index, double x, double y, double z) override {}
+
+    inline
+    virtual void startTemplate(size_t index, double x, double y, double z) override
+    {
+        std::tie(m_sx, m_sy, m_dsx, m_dsy) = m_cali.valDer(z + m_cali.focalPlane());
+    }
+
+    inline
+    virtual std::tuple<double, double, double, double> templateAtPixel(size_t index, 
+        double x, double y, double z, size_t pixX, size_t pixY) override
+    {
+        // draw template image of astigmatism PSF from calibration at x,y,z
+        const double xi = (pixX - x);
+        const double yi = (pixY - y);
+        const double tx = xi * m_cosa + yi * m_sina, tx2 = tx * tx;
+        const double ty = -xi * m_sina + yi * m_cosa, ty2 = ty * ty;
+        const double sx2 = m_sx * m_sx, sx3 = sx2 * m_sx;
+        const double sy2 = m_sy * m_sy, sy3 = sy2 * m_sy;
+        const double e = exp(-0.5 * tx2 / sx2 - 0.5 * ty2 / sy2);
+        const double dx = (tx * m_cosa / sx2 - ty * m_sina / sy2) * e;
+        const double dy = (tx * m_sina / sx2 + ty * m_cosa / sy2) * e;
+        const double dz = (tx2 * m_dsx / sx3 + ty2 * m_dsy / sy3) * e;
+        return { e, dx, dy, dz };
+    }
+};
+
 
 } // namespace LookUpSTORM
 
@@ -119,83 +167,30 @@ bool Controller::isReady() const
     return d->renderer.isReady() && d->fitter.isReady() && (d->imageWidth > 0) && (d->imageHeight > 0);
 }
 
-bool LookUpSTORM::Controller::generateFromCalibration(const Calibration& cali, size_t windowSize, 
-    double dLat, double dAx, double rangeLat, double rangeAx, 
-    std::function<void(size_t index, size_t max)> callback)
+bool LookUpSTORM::Controller::generate(LUT& lut, size_t windowSize, double dLat, double dAx, 
+    double rangeLat, double rangeAx, std::function<void(size_t index, size_t max)> callback)
 {
-    const size_t n = windowSize * windowSize;
+    if (!lut.generate(windowSize, dLat, dAx, rangeLat, rangeAx, callback))
+        return false;
 
-    size_t i = 0;
-    const double borderLat = std::floor((windowSize - rangeLat) / 2);
-    if (borderLat < 1.0) {
-        std::cerr << "Controller: Border during generation is smaller than 1!" << std::endl;
+    if (!d->fitter.setLookUpTable(lut.ptr(), lut.dataSize(), true, windowSize, dLat, dAx, rangeLat, rangeAx)) {
+        if (d->verbose)
+            std::cerr << "Controller: Could not set generated LUT!" << std::endl;
         return false;
     }
 
-    // calculate spatial minimas and maximas
-    const double minLat = borderLat;
-    const double maxLat = windowSize - borderLat;
-    const double minAx = -rangeAx * 0.5;
-    const double maxAx = rangeAx * 0.5;
-
-    // calculate amount of template images
-    const size_t countLat = static_cast<size_t>(std::floor((((maxLat - minLat) / dLat) + 1)));
-    const size_t countAx = static_cast<size_t>(std::floor(((rangeAx / dAx) + 1)));
-    const size_t countIndex = countLat * countLat * countAx;
-
-    const size_t stride = windowSize * windowSize * 4ull;
-
-    // rotation of PSF from calibration
-    const double sina = sin(cali.theta());
-    const double cosa = cos(cali.theta());
-
-    double sx, sy, dsx, dsy;
-
-    const size_t dataSize = countIndex * stride;
-    double *data = new double[dataSize];
-    double* pixels = data;
-    for (i = 0; i < countIndex; ++i) {
-        const size_t zidx = i % countAx;
-        const size_t yidx = (i / countAx) % countLat;
-        const size_t xidx = i / (countAx * countLat);
-
-        const double x = minLat + xidx * dLat;
-        const double y = minLat + yidx * dLat;
-        const double z = minAx + zidx * dAx;
-
-        std::tie(sx, sy, dsx, dsy) = cali.valDer(z + cali.focalPlane());
-
-        // draw template image of astigmatism PSF from calibration at x,y,z
-        for (size_t j = 0; j < n; ++j) {
-            const size_t yy = j / windowSize;
-            const size_t xx = j - yy * windowSize;
-
-            const double xi = (xx - x);
-            const double yi = (yy - y);
-            const double tx = xi * cosa + yi * sina, tx2 = tx * tx;
-            const double ty = -xi * sina + yi * cosa, ty2 = ty * ty;
-            const double sx2 = sx * sx, sx3 = sx2 * sx;
-            const double sy2 = sy * sy, sy3 = sy2 * sy;
-            const double e = exp(-0.5 * tx2 / sx2 - 0.5 * ty2 / sy2);
-
-            *pixels++ = e;
-            *pixels++ = (tx * cosa / sx2 - ty * sina / sy2) * e;
-            *pixels++ = (tx * sina / sx2 + ty * cosa / sy2) * e;
-            *pixels++ = (tx2 * dsx / sx3 + ty2 * dsy / sy3) * e;
-        }
-
-        callback(i, countIndex);
-    }
-
-    if (!d->fitter.setLookUpTable(data, dataSize, true, windowSize, dLat, dAx, rangeLat, rangeAx)) {
-        std::cerr << "Controller: Could not set generated LUT!" << std::endl;
-        return false;
-    }
-
-    d->renderer.setSettings(minAx, maxAx, dAx, 1.f);
+    d->renderer.setSettings(lut.minAx(), lut.maxAx(), dAx, 1.f);
     reset();
 
     return true;
+}
+
+bool Controller::generateFromCalibration(const Calibration& cali, size_t windowSize, 
+    double dLat, double dAx, double rangeLat, double rangeAx, 
+    std::function<void(size_t index, size_t max)> callback)
+{
+    AstigmatismLUT lut(cali);
+    return generate(lut, windowSize, dLat, dAx, rangeLat, rangeAx, callback);
 }
 
 bool Controller::isLocFinished() const
@@ -250,7 +245,8 @@ bool Controller::processImage(ImageU16 image, int frame)
 
         Rect region(int(f.x) - winSize / 2, int(f.y) - winSize/2, winSize, winSize);
         if (!region.moveInside(bounds)) {
-            std::cerr << "LookUpSTORM: Impossible ROI!" << std::endl;
+            if (verbose)
+                std::cerr << "LookUpSTORM: Impossible ROI!" << std::endl;
             continue;
         }
 
@@ -265,6 +261,9 @@ bool Controller::processImage(ImageU16 image, int frame)
             if (m.peak < threshold)
                 continue;
 
+            m.xfit = m.x;
+            m.yfit = m.y;
+
             m.x += region.left();
             m.y += region.top();
 
@@ -277,7 +276,8 @@ bool Controller::processImage(ImageU16 image, int frame)
 
         const auto t = std::chrono::high_resolution_clock::now();
         if (std::chrono::duration<double, std::milli>(t - t0).count() > timeoutMS) {
-            std::cerr << "LookUpSTORM: Timeout!" << std::endl;
+            if (verbose)
+                std::cerr << "LookUpSTORM: Timeout!" << std::endl;
             return false;
         }
     }
@@ -418,6 +418,73 @@ void Controller::setRenderSize(int width, int height)
     d->renderer.setSize(width, height,
         double(width) / d->imageWidth, 
         double(height) / d->imageHeight);
+}
+
+bool Controller::calculateCRLB(const Molecule& mol, double* crlb, const double adu, 
+    const double gain, const double offset, const double pixelSize) const
+{
+    if (!d->fitter.isReady()) {
+        if (d->verbose)
+            std::cerr << "LookUpSTORM: LUT is not set!" << std::endl;
+        return false;
+    }
+    if (crlb == nullptr) {
+        if (d->verbose)
+            std::cerr << "LookUpSTORM: CRLB array is null!" << std::endl;
+        return false;
+    }
+
+    const double photonFactor = adu / gain;
+
+    const size_t winSize = d->fitter.windowSize();
+    const size_t pixels = winSize * winSize;
+
+    const double* psf = d->fitter.templatePtr(mol.xfit, mol.yfit, mol.z);
+    if (psf == nullptr) {
+        if (d->verbose)
+            std::cerr << "LookUpSTORM: Molecule at the position " << mol.xfit << "," << mol.yfit << "," << mol.z << "is invalid!" << std::endl;
+        return false;
+    }
+
+    const double photons = mol.peak * photonFactor;
+
+    // helper function for the derivative of the LUT model at (b, I, x, y, z)
+    auto der = [psf, pixels, photons, pixelSize](size_t i, size_t k) {
+        double scale = 1.0;
+        if ((i == 2) || (i == 3)) scale = photons / pixelSize;
+        else if (i == 4) scale = photons;
+        //if (i > 1) scale = photons / pixelSize;
+        return i == 0 ? 1.0 : psf[4 * k + (i - 1)] * scale;
+    };
+
+    Matrix fisher(5, 5, 0.0);
+    for (size_t i = 0; i < pixels; ++i) {
+        // intensity of the molecule at the pixel k 
+        const double I = photonFactor * (mol.peak * psf[i] + mol.background) - offset * photonFactor;
+        for (size_t j = 0; j < 5; ++j) {
+            for (size_t k = 0; k < 5; ++k) {
+                fisher(j, k) += der(j, i) * der(k, i) / I;
+            }
+        }
+    }
+
+    // calculate inverse of Fisher information matrix
+    int ipiv[5];
+    if (LAPACKE::dgetrf(fisher, ipiv) != 0) {
+        if (d->verbose)
+            std::cerr << "LookUpSTORM: dgetrf failed!" << std::endl;
+        return false;
+    }
+    if (LAPACKE::dgetri(fisher, ipiv) != 0) {
+        if (d->verbose)
+            std::cerr << "LookUpSTORM: dgetri failed!" << std::endl;
+        return false;
+    }
+
+    for (size_t i = 0; i < 5; ++i)
+        crlb[i] = std::sqrt(fisher(i, i));
+
+    return true;
 }
 
 void Controller::reset()
