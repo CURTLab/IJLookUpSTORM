@@ -73,6 +73,9 @@ public class DialogLookUpSTORM extends JFrame {
     private final JSpinner _spinnerAxRange;
     private final JTextField _fileNameField;
     private final JTextField _ramField;
+    private final JSpinner _spinnerADU;
+    private final JSpinner _spinnerGain;
+    private final JSpinner _spinnerBaseline;
     private final JButton _buttonGenerate;
     private final JSpinner _spinnerThreshold;
     private final JSpinner _spinnerScale;
@@ -133,7 +136,7 @@ public class DialogLookUpSTORM extends JFrame {
             };
 
             panelLUT.add(label("Source:"));
-            _comboSource = new JComboBox(new String[]{"Astigmatism", "From Binary File"});
+            _comboSource = new JComboBox(new String[]{"Astigmatism", "Astigmatism Integrated Gauss", "From Binary File"});
             panelLUT.add(_comboSource);
 
             panelLUT.add(label("Window Size:"));
@@ -204,6 +207,38 @@ public class DialogLookUpSTORM extends JFrame {
         }
         _pane.addTab("LUT", panelLUT);
         
+        // image settings panel
+        JPanel panelImage = new JPanel();
+        {
+            GridLayout layout = new GridLayout(9, 2, 5, 5);
+            panelImage.setLayout(layout);
+            
+            panelImage.add(label("Input PixelSize (nm):"));
+            _spinnerPixelSize = new JSpinner();
+            _spinnerPixelSize.setModel(new SpinnerNumberModel(100.0, 1.0, 25000.0, 100.0));
+            panelImage.add(_spinnerPixelSize);
+            
+            panelImage.add(label("ADU (photons/adc):"));
+            _spinnerADU = new JSpinner();
+            _spinnerADU.setModel(new SpinnerNumberModel(45.0, 0.01, 100000.0, 1.0));
+            panelImage.add(_spinnerADU);
+            
+            panelImage.add(label("EM Gain:"));
+            _spinnerGain = new JSpinner();
+            _spinnerGain.setModel(new SpinnerNumberModel(300.0, 1.0, 1000.0, 1.0));
+            panelImage.add(_spinnerGain);
+            
+            panelImage.add(label("Baseline (adc)"));
+            _spinnerBaseline = new JSpinner();
+            _spinnerBaseline.setModel(new SpinnerNumberModel(100.0, 0.0, 250000.0, 10.0));
+            panelImage.add(_spinnerBaseline);
+            
+            // fake labels so that GUI is correct
+            panelImage.add(label(""));
+            panelImage.add(label(""));
+        }
+        _pane.addTab("Image Setup", panelImage);
+        
         // panel general, includes fitting parameters
         JPanel panelGeneral = new JPanel();
         {
@@ -250,11 +285,6 @@ public class DialogLookUpSTORM extends JFrame {
                     _lookUpSTORM.setEpsilon((double)_spinnerEps.getValue());
                 }
             });
-            
-            panelGeneral.add(label("Input PixelSize (nm):"));
-            _spinnerPixelSize = new JSpinner();
-            _spinnerPixelSize.setModel(new SpinnerNumberModel(100.0, 1.0, 25000.0, 100.0));
-            panelGeneral.add(_spinnerPixelSize);
             
             _checkSaveRend = new JCheckBox("Save rendered image");
             _checkSaveRend.setSelected(true);
@@ -387,7 +417,7 @@ public class DialogLookUpSTORM extends JFrame {
     private void doGenerate() {
         final String selectedSource = (String)_comboSource.getSelectedItem();
         _fitButton.setEnabled(false);
-        if (selectedSource.equals("Astigmatism")) {
+        if (selectedSource.equals("Astigmatism") || selectedSource.equals("Astigmatism Integrated Gauss")) {
             if (_cali == null) {
                 JOptionPane.showMessageDialog(this, 
                         "Calibration for AstigmatismLUT is not loaded!", "Error LookUpSTORM", 
@@ -399,7 +429,6 @@ public class DialogLookUpSTORM extends JFrame {
             final double dAx = (double)_spinnerAxDelta.getValue();
             final double rangeAx = (double)_spinnerAxRange.getValue();
             final int winSize = _comboWinSize.getSelectedIndex() == 1 ? 11 : 9;
-            AstigmatismLUT lut = new AstigmatismLUT(_cali);
             
             // check memory
             final long usage = LookUpSTORM.calculateBytesForLUT(winSize, dLat, dAx, rangeLat, rangeAx);
@@ -420,13 +449,31 @@ public class DialogLookUpSTORM extends JFrame {
                 @Override
                 public void run() {
                     final long t0 = System.nanoTime();
-                    if (!lut.populate(winSize, dLat, dAx, rangeLat, rangeAx)) {
-                        JOptionPane.showMessageDialog(null, 
-                                "Could not generate AstigmatismLUT!", "Error LookUpSTORM", 
-                                JOptionPane.ERROR_MESSAGE);
-                        return;
+                    LUT lut = null;
+                    _buttonGenerate.setEnabled(false);
+                    if (selectedSource.equals("Astigmatism")) {
+                        AstigmatismLUT lutgen = new AstigmatismLUT(_cali);
+                        if (!lutgen.populate(winSize, dLat, dAx, rangeLat, rangeAx)) {
+                            JOptionPane.showMessageDialog(null, 
+                                    "Could not generate AstigmatismLUT!", "Error LookUpSTORM", 
+                                    JOptionPane.ERROR_MESSAGE);
+                            _buttonGenerate.setEnabled(true);
+                            return;
+                        }
+                        lut = lutgen;
+                    } else if (selectedSource.equals("Astigmatism Integrated Gauss")) {
+                        AstigmatismErfLUT lutgen = new AstigmatismErfLUT(_cali);
+                        if (!lutgen.populate(winSize, dLat, dAx, rangeLat, rangeAx)) {
+                            JOptionPane.showMessageDialog(null, 
+                                    "Could not generate AstigmatismLUT!", "Error LookUpSTORM", 
+                                    JOptionPane.ERROR_MESSAGE);
+                            _buttonGenerate.setEnabled(true);
+                            return;
+                        }
+                        lut = lutgen;
                     }
-                        if (!_lookUpSTORM.setLUT(lut)) {
+                    _buttonGenerate.setEnabled(true);
+                    if (!_lookUpSTORM.setLUT(lut)) {
                         JOptionPane.showMessageDialog(null, 
                                 "Failed to set AstigmatismLUT for DLL!", "Error LookUpSTORM", 
                                 JOptionPane.ERROR_MESSAGE);
