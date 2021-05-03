@@ -52,6 +52,7 @@ public:
 	void generate(double min, double max, double step, double scale = 1.0);
 
 	uint32_t cachedRgb(double value) const;
+	uint32_t cachedRgbByIndex(uint32_t index) const;
 
 	double min() const;
 	double max() const;

@@ -46,13 +46,14 @@ public:
         , scaleX(1.)
         , scaleY(1.)
         , dZ(1.)
+        , minZ(0.)
     {}
 
     void render(Rect roi);
     void renderTile(const Rect& tile);
     uint32_t pixelCached(int x, int y) const;
 
-    ImageF32 image;
+    ImageU32 image;
     ImageU32 renderImage;
 
     float corner;
@@ -60,6 +61,7 @@ public:
     double scaleX;
     double scaleY;
     double dZ;
+    double minZ;
     std::mutex mutex;
     ColorMap colorLUT;
     ColorMap colorCornerLUT;
@@ -69,8 +71,9 @@ public:
     {
         const int dx = (int)std::round(x * scaleX), dy = (int)std::round(y * scaleY);
         if (image.rect().contains(dx, dy)) {
-            float& pixel = image(dx, dy);
-            pixel = std::max<float>(z, pixel);
+            const uint32_t zi = uint32_t((z - minZ) / dZ) + 1;
+            auto& pixel = image(dx, dy);
+            pixel = std::max(zi, pixel);
         }
     }
 
@@ -78,8 +81,9 @@ public:
     {
         const int dx = (int)std::round(x * scaleX), dy = (int)std::round(y * scaleY);
         if (image.rect().contains(dx, dy)) {
-            float& pixel = image(dx, dy);
-            pixel = std::min<float>(z, pixel);
+            const uint32_t zi = uint32_t((z - minZ) / dZ) + 1;
+            auto& pixel = image(dx, dy);
+            pixel = std::min(zi, pixel);
         }
     }
 
@@ -88,8 +92,9 @@ public:
         const int dx = (int)std::round(x * scaleX);
         const int dz = (int)std::round(z / dZ * scaleY) + image.height() / 2;
         if (image.rect().contains(dx, dz)) {
-            float& pixel = image(dx, dz);
-            pixel = std::max<float>(z, pixel);
+            const uint32_t zi = uint32_t((z - minZ) / dZ) + 1;
+            auto& pixel = image(dx, dz);
+            pixel = std::max(zi, pixel);
         }
     }
 
@@ -98,11 +103,11 @@ public:
         const int dy = (int)std::round(y * scaleX);
         const int dz = (int)std::round(z / dZ * scaleY) + image.height() / 2;
         if (image.rect().contains(dy, dz)) {
-            float& pixel = image(dy, dz);
-            pixel = std::max<float>(z, pixel);
+            const uint32_t zi = uint32_t((z - minZ) / dZ) + 1;
+            auto& pixel = image(dy, dz);
+            pixel = std::max(zi, pixel);
         }
     }
-
 };
 
 } // namespace LookUpSTORM
@@ -142,25 +147,25 @@ uint32_t RendererPrivate::pixelCached(int x, int y) const
     if ((x < 1) || (y < 1) || (x >= image.width() - 1) || (y >= image.height() - 1))
         return BLACK;
 
-    float val;
-    val = image(x, y);
-    if (std::isfinite(val)) return colorLUT.cachedRgb(val);
+    const uint32_t* line = image.ptr(x, y);
+    if (*line) return colorLUT.cachedRgbByIndex((*line) - 1);
 
     const int startX = x - 1;
-    const float* line = image.ptr(startX, y - 1);
-    if (std::isfinite(*line)) return colorCornerLUT.cachedRgb(*line);
-    else if (std::isfinite(*(++line))) return colorCrossLUT.cachedRgb(*line);
-    else if (std::isfinite(*(++line))) return colorCornerLUT.cachedRgb(*line);
+    line = image.ptr(startX, y - 1);
+    if (*line) return colorCornerLUT.cachedRgbByIndex((*line) - 1);
+    else if (*(++line)) return colorCrossLUT.cachedRgbByIndex((*line) - 1);
+    else if (*(++line)) return colorCornerLUT.cachedRgbByIndex((*line) - 1);
 
     line = image.ptr(startX, y);
-    if (std::isfinite(*line)) return colorCrossLUT.cachedRgb(*line);
+    if (*line) return colorCrossLUT.cachedRgbByIndex((*line) - 1);
     line += 2;
-    if (std::isfinite(*line)) return colorCrossLUT.cachedRgb(*line);
+    if (*line) return colorCrossLUT.cachedRgbByIndex((*line) - 1);
 
     line = image.ptr(startX, y + 1);
-    if (std::isfinite(*line)) return colorCornerLUT.cachedRgb(*line);
-    else if (std::isfinite(*(++line))) return colorCrossLUT.cachedRgb(*line);
-    else if (std::isfinite(*(++line))) return colorCornerLUT.cachedRgb(*line);
+    if (*line) return colorCornerLUT.cachedRgbByIndex((*line) - 1);
+    else if (*(++line)) return colorCrossLUT.cachedRgbByIndex((*line) - 1);
+    else if (*(++line)) return colorCornerLUT.cachedRgbByIndex((*line) - 1);
+
     return BLACK;
 }
 
@@ -177,19 +182,19 @@ LookUpSTORM::Renderer::~Renderer()
 
 void Renderer::release()
 {
-    d->image = ImageF32();
+    d->image = ImageU32();
     d->renderImage = ImageU32();
 }
 
 bool Renderer::isReady() const
 {
-    return !d->image.isNull() && d->colorLUT.isCached();
+    return !d->renderImage.isNull() && !d->image.isNull() && d->colorLUT.isCached();
 }
 
 void Renderer::setSize(int width, int height, double scaleX, double scaleY)
 {
     if (d->image.isNull() || (width != d->image.width()) || (height != d->image.height())) {
-        d->image = ImageF32(width, height, std::numeric_limits<float>::quiet_NaN());
+        d->image = ImageU32(width, height, 0);
         d->scaleX = scaleX;
         d->scaleY = scaleY;
     }
@@ -200,6 +205,7 @@ void LookUpSTORM::Renderer::setSettings(double minZ, double maxZ, double stepZ, 
     d->cross = expf(-0.5f * sqr(1.f / sigma));
     d->corner = expf(-sqr(1.f / sigma));
 
+    d->minZ = minZ;
     d->dZ = stepZ;
 
     d->colorLUT.generate(minZ, maxZ, stepZ);
@@ -233,23 +239,16 @@ void Renderer::set(double x, double y, double z)
     if (d->image.isNull())
         return;
     std::lock_guard<std::mutex> guard(d->mutex);
-#if 0
-    switch (d->projection)
-    {
-    case Projection::TopDown: d->setTD(x, y, z); break;
-    case Projection::BottomUp: d->setBU(x, y, z); break;
-    case Projection::SideXZ: d->setXZ(x, y, z); break;
-    case Projection::SideYZ: d->setYZ(x, y, z); break;
-    }
-#else
+
     const int dx = (int)std::round(x * d->scaleX);
     const int dy = (int)std::round(y * d->scaleY);
     if (d->image.rect().contains(dx, dy)) {
-        float& pixel = d->image(dx, dy);
-        pixel = (std::abs(pixel) <= 0.00001f ? z : std::max<float>(z, pixel));
+        const uint32_t zi = uint32_t((z - d->minZ) / d->dZ) + 1;
+        auto& pixel = d->image(dx, dy);
+        pixel = std::max(zi, pixel);
+
         //std::cout << dx << ", " << dy << ", " << pixel << std::endl;
     }
-#endif
 }
 
 std::pair<int, int> Renderer::map(double x, double y) const
@@ -291,13 +290,8 @@ const uint32_t* Renderer::renderImagePtr() const
 
 void Renderer::clear()
 {
-    d->image.fill(std::numeric_limits<float>::quiet_NaN());
+    d->image.fill(0);
     d->renderImage.fill(BLACK);
-}
-
-const ImageF32& Renderer::rawImage() const
-{
-    return d->image;
 }
 
 ImageU32 Renderer::render(const std::list<Molecule>& mols, int width, int height, double scaleX, 
@@ -308,7 +302,7 @@ ImageU32 Renderer::render(const std::list<Molecule>& mols, int width, int height
     r.setRenderImage(image.data(), width, height, scaleX, scaleY);
     r.setSettings(minZ, maxZ, dZ, sigma);
 
-     switch (projection)
+    switch (projection)
     {
     case Projection::TopDown: 
         for (const auto& m : mols) 

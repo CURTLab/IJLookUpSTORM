@@ -104,6 +104,11 @@ uint32_t ColorMap::cachedRgb(double value) const
     return m_lut[i];
 }
 
+uint32_t LookUpSTORM::ColorMap::cachedRgbByIndex(uint32_t index) const
+{
+    return m_lut[index];
+}
+
 double ColorMap::min() const
 {
     return m_min;
