@@ -100,6 +100,11 @@ inline bool CalibrationPrivate::parseParameters()
         ++knotNr;
         knotName = "knot" + std::to_string(knotNr);
     }
+    if (knots.empty()) {
+        std::cout << "Calibration: Cannot import calibration because it doesn't contains knots!" << std::endl;
+        return false;
+    }
+
     focalPlane = (knots.back().z - knots.front().z) * 0.5;
 
     if (parameters.count("angle") > 0) {
@@ -112,11 +117,6 @@ inline bool CalibrationPrivate::parseParameters()
         std::cout << "Calibration: The angle theta is not defined!" << std::endl;
         return false;
     }
-
-    if (knots.empty()) {
-        std::cout << "Calibration: Cannot import data because it doesn't contains knots!" << std::endl;
-        return false;
-    }
     return true;
 }
 
@@ -125,7 +125,6 @@ inline bool CalibrationPrivate::generateSplines()
     // solve equation for cubic b-splines from knots
     const size_t N = knots.size();
     Vector b(N - 2);
-    Vector x(N - 2);
     Matrix A(N - 2, N - 2);
     std::vector<int> ipiv(N - 2);
 
@@ -142,13 +141,17 @@ inline bool CalibrationPrivate::generateSplines()
             if (j < N - 3) A(j, j + 1) = 1.0;
         }
         // LU decomposition
-        LAPACKE::dgetrf(A, ipiv.data());
+        int ret = LAPACKE::dgetrf(A, ipiv.data());
+        if (ret != 0)
+            return false;
         // LU solve
-        LAPACKE::dgetrs(LAPACKE::NoTrans, A, ipiv.data(), b);
+        ret = LAPACKE::dgetrs(LAPACKE::NoTrans, A, ipiv.data(), b);
+        if (ret != 0)
+            return false;
 
         m.front() = 0.0;
         m.back() = 0.0;
-        for (size_t i = 0; i < x.size(); i++)
+        for (size_t i = 0; i < b.size(); i++)
             m[i + 1] = b[i];
 
         coeffs[dir] = Matrix(N - 1, 4);
@@ -193,6 +196,11 @@ bool Calibration::load(const std::string& fileName)
 
     file.close();
 
+    return parseJAML(data);
+}
+
+bool LookUpSTORM::Calibration::parseJAML(const std::string& data)
+{
     if (data.empty()) {
         std::cerr << "Calibration: Calibration file is empty!" << std::endl;
         return false;
@@ -234,14 +242,19 @@ bool Calibration::load(const std::string& fileName)
     if (!d->parseParameters() || !d->generateSplines())
         return false;
 
-    // calculate focal plane
-    FocusFunction func(this);
-    const double e = std::sqrt(brent::r8_epsilon());
-    const double t = std::sqrt(brent::r8_epsilon());
+    if (d->parameters.count("focalPlane") > 0) {
+        d->focalPlane = d->parameters["focalPlane"];
+    }
+    else {
+        // calculate focal plane
+        FocusFunction func(this);
+        const double e = std::sqrt(brent::r8_epsilon());
+        const double t = std::sqrt(brent::r8_epsilon());
 
-    const double min = d->knots.front().z;
-    const double max = d->knots.back().z;
-    brent::glomin(min, max, (max - min) / 2, 10, e, t, func, d->focalPlane);
+        const double min = d->knots.front().z;
+        const double max = d->knots.back().z;
+        brent::glomin(min, max, (max - min) / 2, 10, e, t, func, d->focalPlane);
+    }
 
     return true;
 }

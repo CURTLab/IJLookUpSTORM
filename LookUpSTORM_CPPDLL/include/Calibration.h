@@ -49,6 +49,7 @@ public:
 	~Calibration();
 
 	bool load(const std::string& fileName);
+	bool parseJAML(const std::string& data);
 
 	bool generateSpline();
 

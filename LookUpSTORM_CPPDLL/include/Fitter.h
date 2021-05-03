@@ -35,27 +35,6 @@
 namespace LookUpSTORM
 {
 
-class Molecule
-{
-public:
-	inline Molecule() : data{0.0} {}
-
-	union {
-		struct {
-			double background;
-			double peak;
-			double x;
-			double y;
-			double z;
-			double frame;
-			double xfit;
-			double yfit;
-			double time_us;
-		};
-		double data[7];
-	};
-};
-
 class FitterPrivate;
 
 class DLL_DEF_LUT Fitter final

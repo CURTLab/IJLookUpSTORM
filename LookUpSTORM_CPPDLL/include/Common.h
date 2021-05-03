@@ -60,6 +60,35 @@ enum class Initialization {
 };
 static constexpr Initialization Uninitialized = Initialization::Uninitialized;
 
+enum class Projection {
+    TopDown,
+    BottomUp,
+    SideXZ,
+    SideYZ
+};
+
+
+class Molecule
+{
+public:
+	inline Molecule() : data{ 0.0 } {}
+
+	union {
+		struct {
+			double background;
+			double peak;
+			double x;
+			double y;
+			double z;
+			double frame;
+			double xfit;
+			double yfit;
+			double time_us;
+		};
+		double data[7];
+	};
+};
+
 } // namespace LookUpSTORM
 
 #endif // !COMMON_H

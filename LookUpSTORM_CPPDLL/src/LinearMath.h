@@ -84,7 +84,7 @@ namespace LAPACKE {
     };
 
     int dgetrf(Matrix& A, int* ipiv);
-    int dgetrs(TRANSPOSE_t Trans, const Matrix& A, int* ipiv, Vector& b);
+    int dgetrs(TRANSPOSE_t Trans, const Matrix& A, const int* ipiv, Vector& b);
     int dgetri(Matrix& A, const int* ipiv);
 
 #ifndef NO_LAPACKE_LUT

@@ -7,3 +7,5 @@
 nbactions.xml
 LookUpSTORM_CPPDLL/LookUpSTORM_CPPDLL.vcxproj.user
 LookUpSTORM_CPPDLL/x64
+*.user
+*.config

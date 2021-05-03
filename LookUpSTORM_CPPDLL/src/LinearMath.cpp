@@ -131,7 +131,7 @@ int LAPACKE::dgetrf(Matrix& A, int* ipiv)
     return LAPACKE_dgetrf(LAPACK_ROW_MAJOR, INT(A.size1()), INT(A.size2()), A.data(), INT(A.tda()), ipiv);
 }
 
-int LAPACKE::dgetrs(TRANSPOSE_t Trans, const Matrix& A, int* ipiv, Vector& b)
+int LAPACKE::dgetrs(TRANSPOSE_t Trans, const Matrix& A, const int* ipiv, Vector& b)
 {
     if (A.isNull() || b.isNull())
         return LIN_ERR_NULL_ARRAY;
