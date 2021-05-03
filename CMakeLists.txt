@@ -42,12 +42,43 @@ add_definitions(-DNO_LAPACKE_LUT)
 
 option(USE_MKL "Use MKL" False)
 option(JNI_EXPORT "Export Symbols for JNI" False)
+option(USE_AVX_INTRINSICS "Use AVX" False)
 
 set(CMAKE_DEBUG_POSTFIX d)
 
 if (MSVC)
 	add_definitions(-D_USE_MATH_DEFINES -DNOMINMAX)
 endif(MSVC)
+
+if(USE_AVX_INTRINSICS)
+	include(CheckCXXSourceRuns)
+	if(MSVC AND NOT MSVC_VERSION LESS 1600)
+        set(CMAKE_REQUIRED_FLAGS "/arch:AVX")
+    endif()
+	
+	check_cxx_source_runs("
+		#include <immintrin.h>
+		#include <cmath>
+
+		int main() {
+			__m256d x = _mm256_set_pd(3.0, 2.0, 1.0, 0.0);
+			__m256d y = _mm256_set1_pd(2.0);
+			x = _mm256_mul_pd(x, y);
+			for (int i = 0; i < 4; ++i) {
+				if (abs(x.m256d_f64[i] - 2.0 * i) > 1E-8)
+					return -1;
+			}
+			return 0;
+		}
+	" HAVE_AVX_EXTENSIONS)
+	
+	if(HAVE_AVX_EXTENSIONS)
+		add_definitions(-DUSE_AVX_LUT)
+	else(HAVE_AVX_EXTENSIONS)
+		message(STATUS "No AVX support!")
+	endif(HAVE_AVX_EXTENSIONS)
+
+endif(USE_AVX_INTRINSICS)
 
 if(JNI_EXPORT)
 	list(APPEND SOURCE_FILES LookUpSTORM_CPPDLL/src/LookUpSTORM_CPPDLL.cpp)

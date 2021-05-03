@@ -29,6 +29,10 @@
 #include <iostream>
 #include <atomic>
 
+#ifdef USE_AVX_LUT
+#include <immintrin.h>
+#endif
+
 namespace LookUpSTORM
 {
 
@@ -171,8 +175,35 @@ bool Fitter::fitSingle(const ImageU16& roi, Molecule& mol)
 
 		d->x1.setZero();
 
+#ifdef USE_AVX_LUT
+		// intrinic set is reversed! (d3, d2, d1, d0)
+		__m256d vpeak = _mm256_set_pd(peak, peak, peak, 1.0);
+#endif
+
 		double ssq0 = 0.0;
 		for (int i = 0; i < N; i++) {
+#ifdef USE_AVX_LUT
+			// load 4 double (e, dx, dy, dz) from lookup table
+			__m256d vpsf = _mm256_load_pd(lookup);
+			lookup += 4;
+
+			// residual
+			const double rval = bg + peak * vpsf.m256d_f64[0] - roi[i];
+			ssq0 += rval * rval;
+
+			// multiply delta vector by peak
+			vpsf = _mm256_mul_pd(vpeak, vpsf);
+
+			// Jacobian 
+			_mm256_store_pd(&d->J(i, 1), vpsf);
+
+			// JTr
+			__m256d vrval = _mm256_set1_pd(rval);
+			d->x1[0] += rval;
+			__m256d vx0 = _mm256_load_pd(&d->x1[1]);
+			vx0 = _mm256_fmadd_pd(vrval, vpsf, vx0);
+			_mm256_store_pd(&d->x1[1], vx0);
+#else
 			const double e = *lookup++;
 			const double dx = peak * (*lookup++);
 			const double dy = peak * (*lookup++);
@@ -196,6 +227,7 @@ bool Fitter::fitSingle(const ImageU16& roi, Molecule& mol)
 			d->x1[2] += rval * dx;
 			d->x1[3] += rval * dy;
 			d->x1[4] += rval * dz;
+#endif
 		}
 
 		//if (BLAS::dgemm(BLAS::CblasTrans, BLAS::CblasNoTrans, 1.0, d->J, d->J, 0.0, d->JTJ) != LIN_SUCCESS) break;
@@ -300,7 +332,7 @@ bool Fitter::setLookUpTable(const double* data, size_t dataSize, bool allocated,
 	}
 
 	const size_t N = size_t(windowSize) * size_t(windowSize);
-	d->J = Matrix(N, 5, Uninitialized);
+	d->J = Matrix(N, 5, 1.0);
 
 	return true;
 }
