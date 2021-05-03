@@ -136,8 +136,8 @@ int LAPACKE::dgetrs(TRANSPOSE_t Trans, const Matrix& A, const int* ipiv, Vector&
     if (A.isNull() || b.isNull())
         return LIN_ERR_NULL_ARRAY;
     return LAPACKE_dgetrs(LAPACK_ROW_MAJOR, Trans, INT(A.size1()), INT(1), 
-                          A.constData(), INT(A.size2()), 
-                          ipiv, b.data(), INT(b.size()));
+                          A.constData(), INT(A.tda()), 
+                          ipiv, b.data(), INT(b.stride()));
 }
 
 int LAPACKE::dgetri(Matrix& A, const int* ipiv)
@@ -145,6 +145,17 @@ int LAPACKE::dgetri(Matrix& A, const int* ipiv)
     if (A.isNull())
         return LIN_ERR_NULL_ARRAY;
     return LAPACKE_dgetri(LAPACK_ROW_MAJOR, INT(A.size1()), A.data(), INT(A.size2()), ipiv);
+}
+
+int LAPACKE::dgesv(Matrix& A, int* ipiv, Vector& b)
+{
+    if (A.isNull() || b.isNull())
+        return LIN_ERR_NULL_ARRAY;
+    if (A.size1() != A.size2())
+        return LIN_ERR_NOT_SQUARE;
+    if (A.size1() != b.size())
+        return LIN_ERR_SHAPE;
+    return LAPACKE_dgesv(LAPACK_ROW_MAJOR, INT(A.size1()), INT(1), A.data(), INT(A.tda()), ipiv, b.data(), INT(b.stride()));
 }
 
 #ifndef NO_LAPACKE_LUT

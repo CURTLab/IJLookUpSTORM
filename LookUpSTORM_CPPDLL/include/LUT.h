@@ -31,11 +31,12 @@
 #define LUT_H
 
 #include <functional>
+#include "Common.h"
 
 namespace LookUpSTORM
 {
 
-class LUT
+class DLL_DEF_LUT LUT
 {
 public:
 	LUT();

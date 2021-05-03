@@ -124,6 +124,18 @@ int LAPACKE_dgetri(const enum CBLAS_ORDER Order, const int N, double* A,
     return(ierr);
 }
 
+inline
+int LAPACKE_dgesv(const enum CBLAS_ORDER Order, const int n, const int nrhs,
+    double* a, const int lda, int* ipiv, double* b, const int ldb)
+{
+    int info = LAPACKE_dgetrf(Order, n, n, a, lda, ipiv);
+    if (info == 0)
+        ATL_getrs(AtlasColMajor, AtlasNoTrans, n, nrhs, a, lda, ipiv, b, ldb);
+    for (int i = 0; i != n; i++) 
+        ipiv[i]++;
+    return info;
+}
+
 #undef MB
 #undef NB
 #undef KB

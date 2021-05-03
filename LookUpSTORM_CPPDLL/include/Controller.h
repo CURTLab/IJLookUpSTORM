@@ -68,6 +68,9 @@ public:
 		std::function<void(size_t index, size_t max)> callback = [](size_t, size_t) {}
 	);
 
+	// set the internal lookup table from the generated table of the LUT class 
+	bool setLUT(const LUT& lut);
+
 	// thread-safe
 	bool isLocFinished() const;
 

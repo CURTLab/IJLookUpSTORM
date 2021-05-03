@@ -56,9 +56,15 @@ bool LUT::generate(size_t windowSize, double dLat, double dAx, double rangeLat, 
     size_t i = 0;
     const double borderLat = std::floor((windowSize - rangeLat) / 2);
     if (borderLat < 1.0) {
-        std::cerr << "Controller: Border during generation is smaller than 1!" << std::endl;
+        std::cerr << "LUT: Border during generation is smaller than 1!" << std::endl;
         return false;
     }
+
+    m_windowSize = windowSize;
+    m_dLat = dLat;
+    m_dAx = dAx;
+    m_rangeLat = rangeLat;
+    m_rangeAx = rangeAx;
 
     // calculate spatial minimas and maximas
     m_minLat = borderLat;

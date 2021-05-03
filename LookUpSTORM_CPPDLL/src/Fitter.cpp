@@ -275,16 +275,20 @@ bool Fitter::fitSingle(const ImageU16& roi, Molecule& mol)
 		}
 	}
 
-	if ((iter == 0) || (d->x0[0] < 0.0) || (d->x0[1] < 0.0) || (d->x0[0] > 13000.0) || (d->x0[1] > 13000.0) || 
-		cmp(d->x0[2], startLat) || cmp(d->x0[3], startLat) || (d->x0[4] == 0.0))
+	if ((iter == 0) || (d->x0[0] < 0.0) || (d->x0[1] < 0.0) || (d->x0[0] > 13000.0) || (d->x0[1] > 65536.0) ||
+		cmp(d->x0[2], startLat) || cmp(d->x0[3], startLat) || (d->x0[4] == 0.0)) {
+		//std::cout << "Val error (iter:" << iter << ",bg:" << d->x0[0] << ",I:" << d->x0[1] << std::endl;
 		return false;
+	}
 
 	d->x0[2] -= fmod(d->x0[2], d->dLat);
 	d->x0[3] -= fmod(d->x0[3], d->dLat);
 	d->x0[4] -= fmod(d->x0[4], d->dAx);
 
-	if (!isValid(d->x0[2], d->x0[3], d->x0[4]))
+	if (!isValid(d->x0[2], d->x0[3], d->x0[4])) {
+		//std::cout << "Invalid position error" << std::endl;
 		return false;
+	}
 
 	mol.background = d->x0[0];
 	mol.peak = d->x0[1];

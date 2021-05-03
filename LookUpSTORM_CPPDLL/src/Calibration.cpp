@@ -140,15 +140,11 @@ inline bool CalibrationPrivate::generateSplines()
             if (j > 0) A(j, j - 1) = 1.0;
             if (j < N - 3) A(j, j + 1) = 1.0;
         }
-        // LU decomposition
-        int ret = LAPACKE::dgetrf(A, ipiv.data());
-        if (ret != 0)
-            return false;
-        // LU solve
-        ret = LAPACKE::dgetrs(LAPACKE::NoTrans, A, ipiv.data(), b);
-        if (ret != 0)
+        // try to solve the equation system
+        if (LAPACKE::dgesv(A, ipiv.data(), b) != 0)
             return false;
 
+        // prepare coefficent matrix
         m.front() = 0.0;
         m.back() = 0.0;
         for (size_t i = 0; i < b.size(); i++)

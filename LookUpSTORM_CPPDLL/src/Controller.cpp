@@ -172,17 +172,7 @@ bool LookUpSTORM::Controller::generate(LUT& lut, size_t windowSize, double dLat,
 {
     if (!lut.generate(windowSize, dLat, dAx, rangeLat, rangeAx, callback))
         return false;
-
-    if (!d->fitter.setLookUpTable(lut.ptr(), lut.dataSize(), true, windowSize, dLat, dAx, rangeLat, rangeAx)) {
-        if (d->verbose)
-            std::cerr << "Controller: Could not set generated LUT!" << std::endl;
-        return false;
-    }
-
-    d->renderer.setSettings(lut.minAx(), lut.maxAx(), dAx, 1.f);
-    reset();
-
-    return true;
+    return setLUT(lut);
 }
 
 bool Controller::generateFromCalibration(const Calibration& cali, size_t windowSize, 
@@ -191,6 +181,26 @@ bool Controller::generateFromCalibration(const Calibration& cali, size_t windowS
 {
     AstigmatismLUT lut(cali);
     return generate(lut, windowSize, dLat, dAx, rangeLat, rangeAx, callback);
+}
+
+bool LookUpSTORM::Controller::setLUT(const LUT& lut)
+{
+    if (!lut.isValid()) {
+        if (d->verbose)
+            std::cerr << "LookUpSTORM: LUT is not vaild!" << std::endl;
+        return false;
+    }
+
+    if (!d->fitter.setLookUpTable(lut.ptr(), lut.dataSize(), true, lut.windowSize(), lut.dLat(), lut.dAx(), lut.rangeLat(), lut.rangeAx())) {
+        if (d->verbose)
+            std::cerr << "Controller: Could not set generated LUT!" << std::endl;
+        return false;
+    }
+
+    d->renderer.setSettings(lut.minAx(), lut.maxAx(), lut.dAx(), 1.f);
+    reset();
+
+    return true;
 }
 
 bool Controller::isLocFinished() const

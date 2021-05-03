@@ -87,6 +87,10 @@ namespace LAPACKE {
     int dgetrs(TRANSPOSE_t Trans, const Matrix& A, const int* ipiv, Vector& b);
     int dgetri(Matrix& A, const int* ipiv);
 
+    // solves the system of linear equations Ax = b
+    // A is factored using Gaussian elimination with partial pivoting
+    int dgesv(Matrix& A, int* ipiv, Vector& b);
+
 #ifndef NO_LAPACKE_LUT
     int dsysv(UPLO_t uplo, Matrix& A, int* ipiv, Vector& b);
 #endif // NO_LAPACKE
