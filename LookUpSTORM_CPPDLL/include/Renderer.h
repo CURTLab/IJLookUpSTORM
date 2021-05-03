@@ -32,6 +32,7 @@
 
 #include "Image.h"
 #include <mutex>
+#include <list>
 
 namespace LookUpSTORM
 {
@@ -42,7 +43,6 @@ class DLL_DEF_LUT Renderer final
 {
 public:
 	Renderer();
-	Renderer(int width, int height, double scaleX, double scaleY);
 	~Renderer();
 
 	void release();
@@ -70,6 +70,11 @@ public:
 	void clear();
 
 	const ImageF32 &rawImage() const;
+
+	// render a molecule list with the possiblity of different projections
+	static ImageU32 render(const std::list<Molecule>& mols, int width, int height,
+		double scaleX, double scaleY, double minZ, double maxZ, double dZ, 
+		double sigma = 1.0, Projection projection = Projection::TopDown);
 
 private:
 	RendererPrivate* const d;

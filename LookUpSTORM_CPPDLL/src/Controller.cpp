@@ -100,7 +100,7 @@ public:
     {}
 
 protected:
-    inline virtual void preTemplates(size_t windowSize, double dLat, double dAx, double rangeLat, double rangeAx) {}
+    inline virtual void preTemplates(size_t windowSize, double dLat, double dAx, double rangeLat, double rangeAx) override {}
     inline virtual void endTemplate(size_t index, double x, double y, double z) override {}
 
     inline
@@ -268,7 +268,7 @@ bool Controller::processImage(ImageU16 image, int frame)
             m.y += region.top();
 
             changedRegion.extendByPoint(d->renderer.map(m.x, m.y));
-            d->renderer.set(m.x, m.y, m.z + 1E-6);
+            d->renderer.set(m.x, m.y, m.z);
 
             d->detectedMolecues.push_back(m);
             d->mols.push_back(m);

@@ -58,7 +58,7 @@ public:
         , data(copy ? new T[size_t(w) * size_t(h)] : data)
     {
         if (copy)
-            std::copy(data, data + (size_t(w) * h), this->data);
+            std::copy_n(data, (size_t(w) * h), this->data);
         ++ref;
     }
     inline ~ImageData() { 
@@ -95,6 +95,13 @@ template<class T>
 Image<T>::Image(int width, int height)
     : d(new ImageData<T>(width, height))
 {
+}
+
+template<class T>
+LookUpSTORM::Image<T>::Image(int width, int height, const T value)
+    : d(new ImageData<T>(width, height))
+{
+    std::fill_n(d->data, size_t(width) * height, value);
 }
 
 template<class T>

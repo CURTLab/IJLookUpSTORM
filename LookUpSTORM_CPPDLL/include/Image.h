@@ -52,6 +52,7 @@ class DLL_DEF_LUT Image
 public:
 	Image();
 	Image(int width, int height);
+	Image(int width, int height, const T value);
 	Image(int width, int height, T *data, bool copy);
 	Image(const Image& image);
 
