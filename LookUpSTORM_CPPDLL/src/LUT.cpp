@@ -38,6 +38,8 @@ LUT::LUT()
     : m_data(nullptr)
     , m_dataSize(0)
     , m_windowSize(0)
+    , m_countLat(0)
+    , m_countAx(0)
     , m_dLat(0.0)
     , m_dAx(0.0)
     , m_rangeLat(0.0)
@@ -73,9 +75,9 @@ bool LUT::generate(size_t windowSize, double dLat, double dAx, double rangeLat, 
     m_maxAx = rangeAx * 0.5;
 
     // calculate amount of template images
-    const size_t countLat = static_cast<size_t>(std::floor((((m_maxLat - m_minLat) / dLat) + 1)));
-    const size_t countAx = static_cast<size_t>(std::floor(((rangeAx / dAx) + 1)));
-    const size_t countIndex = countLat * countLat * countAx;
+    m_countLat = static_cast<size_t>(std::floor((((m_maxLat - m_minLat) / dLat) + 1)));
+    m_countAx = static_cast<size_t>(std::floor(((rangeAx / dAx) + 1)));
+    const size_t countIndex = m_countLat * m_countLat * m_countAx;
 
     const size_t stride = windowSize * windowSize * 4ull;
 
@@ -87,9 +89,9 @@ bool LUT::generate(size_t windowSize, double dLat, double dAx, double rangeLat, 
 
     double* pixels = m_data;
     for (i = 0; i < countIndex; ++i) {
-        const size_t zidx = i % countAx;
-        const size_t yidx = (i / countAx) % countLat;
-        const size_t xidx = i / (countAx * countLat);
+        const size_t zidx = i % m_countAx;
+        const size_t yidx = (i / m_countAx) % m_countLat;
+        const size_t xidx = i / (m_countAx * m_countLat);
 
         const double x = m_minLat + xidx * dLat;
         const double y = m_minLat + yidx * dLat;
@@ -112,4 +114,26 @@ bool LUT::generate(size_t windowSize, double dLat, double dAx, double rangeLat, 
 void LUT::release()
 {
     delete m_data;
+}
+
+size_t LUT::lookupIndex(double x, double y, double z) const
+{
+    const size_t xi = static_cast<size_t>(std::round((x - m_minLat) / m_dLat));
+    const size_t yi = static_cast<size_t>(std::round((y - m_minLat) / m_dLat));
+    const size_t zi = static_cast<size_t>(std::round((z - m_minAx) / m_dAx));
+    const size_t index = zi + yi * m_countAx + xi * m_countAx * m_countLat;
+    return index;
+}
+
+std::tuple<double, double, double> LookUpSTORM::LUT::lookupPosition(size_t index) const
+{
+    const size_t zidx = index % m_countAx;
+    const size_t yidx = (index / m_countAx) % m_countLat;
+    const size_t xidx = index / (m_countAx * m_countLat);
+
+    const double x = m_minLat + xidx * m_dLat;
+    const double y = m_minLat + yidx * m_dLat;
+    const double z = m_minAx + zidx * m_dAx;
+
+    return { x, y, z };
 }

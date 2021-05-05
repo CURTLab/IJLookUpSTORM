@@ -327,4 +327,77 @@ JNIEXPORT jstring JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getVersion
 	return env->NewStringUTF("0.1");
 }
 
+typedef struct _JNI_POSREC {
+	jclass cls;
+	jmethodID constructortorID;
+	jfieldID frameID;
+	jfieldID xID;
+	jfieldID yID;
+	jfieldID zID;
+	jfieldID intensityID;
+	jfieldID backgroundID;
+	jfieldID crlb_xID;
+	jfieldID crlb_yID;
+	jfieldID crlb_zID;
+} JNI_POSREC;
+
+bool LoadJniPosRec(JNI_POSREC* jniPosRec, JNIEnv* env)
+{
+	jniPosRec->cls = env->FindClass("at/fhlinz/imagej/Molecule");
+	if (jniPosRec == nullptr) {
+		std::cerr << "LookUpSTORM_CPPDLL: Could not load JNI class description of Molecule!" << std::endl;
+		return false;
+	}
+
+	jniPosRec->constructortorID = env->GetMethodID(jniPosRec->cls, "<init>", "()V");
+	jniPosRec->frameID = env->GetFieldID(jniPosRec->cls, "frame", "I");
+	jniPosRec->xID = env->GetFieldID(jniPosRec->cls, "x", "D");
+	jniPosRec->yID = env->GetFieldID(jniPosRec->cls, "y", "D");
+	jniPosRec->zID = env->GetFieldID(jniPosRec->cls, "z", "D");
+	jniPosRec->intensityID = env->GetFieldID(jniPosRec->cls, "intensity", "D");
+	jniPosRec->backgroundID = env->GetFieldID(jniPosRec->cls, "background", "D");
+	jniPosRec->crlb_xID = env->GetFieldID(jniPosRec->cls, "crlb_x", "D");
+	jniPosRec->crlb_yID = env->GetFieldID(jniPosRec->cls, "crlb_y", "D");
+	jniPosRec->crlb_zID = env->GetFieldID(jniPosRec->cls, "crlb_z", "D");
+
+	return true;
+}
+
+JNIEXPORT jobjectArray JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getFittedMolecules
+(JNIEnv* env, jobject, jdouble pixelSize, jdouble adu, jdouble gain, jdouble baseline)
+{
+	JNI_POSREC jniPosRec;
+	LoadJniPosRec(&jniPosRec, env);
+	
+	std::list<Molecule>& mols = Controller::inst()->allMolecues();
+
+	const jclass doubleArray1DClass = env->FindClass("[D");
+
+	jobjectArray result = env->NewObjectArray(mols.size(), jniPosRec.cls, nullptr);
+	
+	double crlb[5];
+	auto it = mols.begin();
+	for (size_t i = 0; i < mols.size(); ++i, ++it) {
+		const double photons = Controller::inst()->calculatePhotons(*it, adu, gain);
+		const double bg = std::max(0.0, (it->background - baseline) * adu / gain);
+
+		jobject jPosRec = env->NewObject(jniPosRec.cls, jniPosRec.constructortorID);
+		env->SetIntField(jPosRec, jniPosRec.frameID, (jint)it->frame);
+		env->SetDoubleField(jPosRec, jniPosRec.xID, (jdouble)(it->x * pixelSize));
+		env->SetDoubleField(jPosRec, jniPosRec.yID, (jdouble)(it->y * pixelSize));
+		env->SetDoubleField(jPosRec, jniPosRec.zID, (jdouble)it->z);
+		env->SetDoubleField(jPosRec, jniPosRec.intensityID, (jdouble)photons);
+		env->SetDoubleField(jPosRec, jniPosRec.backgroundID, (jdouble)bg);
+		if (Controller::inst()->calculateCRLB(*it, crlb, adu, gain, baseline, pixelSize) &&
+			std::isfinite(crlb[2]) && std::isfinite(crlb[3]) && std::isfinite(crlb[4])) {
+			env->SetDoubleField(jPosRec, jniPosRec.crlb_xID, (jdouble)crlb[2]);
+			env->SetDoubleField(jPosRec, jniPosRec.crlb_yID, (jdouble)crlb[3]);
+			env->SetDoubleField(jPosRec, jniPosRec.crlb_zID, (jdouble)crlb[4]);
+		}
+		env->SetObjectArrayElement(result, i, jPosRec);
+	}
+
+	return result;
+}
+
 #endif // JNI_EXPORT

@@ -430,6 +430,31 @@ void Controller::setRenderSize(int width, int height)
         double(height) / d->imageHeight);
 }
 
+double LookUpSTORM::Controller::calculatePhotons(const Molecule& mol, const double adu, const double gain) const
+{
+    if (!d->fitter.isReady()) {
+        if (d->verbose)
+            std::cerr << "LookUpSTORM: LUT is not set!" << std::endl;
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+
+    const size_t winSize = d->fitter.windowSize();
+    const size_t pixels = winSize * winSize;
+    const double photonFactor = adu / gain;
+
+    const double* psf = d->fitter.templatePtr(mol.xfit, mol.yfit, mol.z);
+    if (psf == nullptr) {
+        if (d->verbose)
+            std::cerr << "LookUpSTORM: Molecule at the position " << mol.xfit << "," << mol.yfit << "," << mol.z << "is invalid!" << std::endl;
+        return false;
+    }
+
+    double photons = 0.0;
+    for (size_t i = 0; i < pixels; ++i)
+        photons += psf[4 * i] * mol.peak * photonFactor;
+    return photons;
+}
+
 bool Controller::calculateCRLB(const Molecule& mol, double* crlb, const double adu, 
     const double gain, const double offset, const double pixelSize) const
 {

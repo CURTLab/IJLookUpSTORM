@@ -33,6 +33,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.WindowManager;
+import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -349,6 +350,14 @@ public class DialogLookUpSTORM extends JFrame {
             _fileNameField.setText(fileName);
     }
     
+    /**
+     * Set the threshold for fitting
+     * @param threshold Threshold in ADU
+     */
+    public void setThreshold(int threshold) {
+        _spinnerThreshold.setValue(threshold);
+    }
+    
     /** 
      * Set the output path for the real time experiment
      * @param path 
@@ -560,6 +569,30 @@ public class DialogLookUpSTORM extends JFrame {
                 final String out = "Found " + _lookUpSTORM.numberOfAllLocs() + " emitters in " + (t1 - t0) / 1E9 + " s!";
                 IJ.showStatus(out);
                 System.out.println(out);
+                
+                final double pixelSize = (double)_spinnerPixelSize.getValue();
+                final double adu = (double)_spinnerADU.getValue();
+                final double gain = (double)_spinnerGain.getValue();
+                final double baseline = (double)_spinnerBaseline.getValue();
+
+                Molecule[] mols = _lookUpSTORM.getFittedMolecules(pixelSize, adu, gain, baseline);
+                ResultsTable table = new ResultsTable();
+                for (int i = 0; i < mols.length; ++i) {
+                    Molecule m = mols[i];
+                    table.incrementCounter();
+                    table.addValue("Frame", m.frame+1);
+                    table.addValue("x / nm", m.x);
+                    table.addValue("y / nm", m.y);
+                    table.addValue("z / nm", m.z);
+                    table.addValue("intensity / photons", m.intensity);
+                    table.addValue("background / photons", m.background);
+                    table.addValue("crlb_x / nm", m.crlb_x);
+                    table.addValue("crlb_y / nm", m.crlb_y);
+                    table.addValue("crlb_z / nm", m.crlb_z);
+                }
+                
+                table.show(imp.getTitle());
+                
                 save(imp.getTitle());
             }
         };
@@ -590,8 +623,12 @@ public class DialogLookUpSTORM extends JFrame {
         }
         if (saveLocs) {
             final double pixelSize = (double)_spinnerPixelSize.getValue();
+            final double adu = (double)_spinnerADU.getValue();
+            final double gain = (double)_spinnerGain.getValue();
+            final double baseline = (double)_spinnerBaseline.getValue();
+
             final String fileName = outBase + "_SMLM.csv";
-            if (!_lookUpSTORM.saveLocsCSV(fileName, pixelSize)) {
+            if (!_lookUpSTORM.saveMolsCSV(fileName, pixelSize, adu, gain, baseline)) {
                 JOptionPane.showMessageDialog(this, 
                     "Could not save localizations as: " + fileName, 
                     "Warning LookUpSTORM", 
@@ -602,17 +639,21 @@ public class DialogLookUpSTORM extends JFrame {
     
     private void startAnalysisGUI() {
         _pane.setEnabledAt(0, false);
-        _pane.setSelectedIndex(1);
+        _pane.setEnabledAt(1, false);
+        _pane.setSelectedIndex(2);
         _spinnerScale.setEnabled(false);
+        _spinnerEps.setEnabled(false);
         _fitButton.setEnabled(false);
-        _spinnerPixelSize.setEnabled(false);
+        _spinnerMaxIter.setEnabled(false);
     }
     
     private void stopAnalysisGUI() {
         _pane.setEnabledAt(0, true);
+        _pane.setEnabledAt(1, true);
         _spinnerScale.setEnabled(true);
+        _spinnerEps.setEnabled(true);
         _fitButton.setEnabled(true);
-        _spinnerPixelSize.setEnabled(true);
+        _spinnerMaxIter.setEnabled(true);
     }
     
     private boolean checkLUTData(String fileName) {

@@ -123,7 +123,7 @@ public class LookUpSTORM {
      * Get the all detected localizations. This array is reseted by the reset 
      * method or setLookUpTable method.
      * @return Array of localizations as double[7] array 
-     * [bg,peak,x,y,z,frame,time]. x & y is returned as pixels, z in nm and 
+     * [bg,peak,x,y,z,frame,xfit,yfit,time]. x & y is returned as pixels, z in nm and 
      * time in µs
      * @see LookUpSTORM#reset()
      */
@@ -256,6 +256,17 @@ public class LookUpSTORM {
     public native String getVersion();
     
     /**
+     * Native method to get the all the fitted molecules since the last reset
+     * intensity and background in photon count and the individual CRLB
+     * @param pixelSize pixelSize in nm
+     * @param adu ADU (EM CCD Camera ADC count to photons)
+     * @param gain EM-Gain (1 if deactivated)
+     * @param baseline Baseline of camera in ADC values
+     * @return list of fitted molecules
+     */
+    public native Molecule[] getFittedMolecules(double pixelSize, double adu, double gain, double baseline);
+    
+    /**
      * Calculate the bytes needed for the LUT template array with the supplied
      * parameters.
      * @param windowSize template window size
@@ -321,6 +332,56 @@ public class LookUpSTORM {
     }
     
     /** 
+     * Save all detected molecules since the last reset to a CSV file.
+     * Header: index,frame,x_nm,y_nm,z_nm,intensity,background,time
+     * @param fileName Output CSV file name.
+     * @param pixelSize Pixels size of the input image in nm
+     * @param adu ADU (EM CCD Camera ADC count to photons)
+     * @param gain EM-Gain (1 if deactivated)
+     * @param baseline Baseline of camera in ADC values
+     * @return 
+     * @see LookUpSTORM#getAllLocs() 
+     */
+    public boolean saveMolsCSV(String fileName, double pixelSize, double adu, double gain, double baseline) {
+        Molecule[] mols = getFittedMolecules(pixelSize, adu, gain, baseline);
+        try {
+            PrintWriter stream = new PrintWriter(fileName);
+            stream.write("index,frame,x_nm,y_nm,z_nm,intensity,background,crlb_x,crlb_y,crlb_z\n");
+            int idx = 1;
+            for (Molecule m:mols) {
+                // [bg,peak,x,y,z,frame,xfit,yfit,time]
+                StringBuilder builder = new StringBuilder();
+                builder.append(idx++);
+                builder.append(',');
+                builder.append(m.frame + 1);
+                builder.append(',');
+                builder.append(m.x);
+                builder.append(',');
+                builder.append(m.y);
+                builder.append(',');
+                builder.append(m.z);
+                builder.append(',');
+                builder.append(m.intensity);
+                builder.append(',');
+                builder.append(m.background);
+                builder.append(',');
+                builder.append(m.crlb_x);
+                builder.append(',');
+                builder.append(m.crlb_y);
+                builder.append(',');
+                builder.append(m.crlb_z);
+                builder.append('\n');
+                stream.write(builder.toString());
+            }
+            stream.close();
+            return true;
+        } catch (FileNotFoundException ex) {
+            System.out.println("LookUpSTORM: Could not save file " + fileName);
+            return false;
+        }
+    }
+    
+    /** 
      * Save all detected localizations since the last reset to a CSV file.
      * Header: index,frame,x_nm,y_nm,z_nm,intensity,background,time
      * @param fileName Output CSV file name.
@@ -335,11 +396,11 @@ public class LookUpSTORM {
             stream.write("index,frame,x_nm,y_nm,z_nm,intensity,background,time\n");
             int idx = 1;
             for (double[] l:locs) {
-                // [bg,peak,x,y,z,frame,time]
+                // [bg,peak,x,y,z,frame,xfit,yfit,time]
                 StringBuilder builder = new StringBuilder();
                 builder.append(idx++);
                 builder.append(',');
-                builder.append(l[6] + 1);
+                builder.append(l[5] + 1);
                 builder.append(',');
                 builder.append(l[2] * pixelSize);
                 builder.append(',');
@@ -351,7 +412,7 @@ public class LookUpSTORM {
                 builder.append(',');
                 builder.append(l[0]);
                 builder.append(',');
-                builder.append(l[6]);
+                builder.append(l[8]);
                 builder.append('\n');
                 stream.write(builder.toString());
             }

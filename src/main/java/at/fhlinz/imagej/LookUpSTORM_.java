@@ -54,7 +54,15 @@ public class LookUpSTORM_ implements PlugIn {
                         JOptionPane.INFORMATION_MESSAGE);
         } else {
             if (arg.length() > 0) {
-                _frame.setFileName(arg);
+                String[] args = arg.split(";");
+                for (String a : args) {
+                    if (a.startsWith("cali:")) {
+                        _frame.setFileName(a.substring(5));
+                    } else if (a.startsWith("threshold:")) {
+                        _frame.setThreshold(Integer.parseInt(a.substring(10)));
+                    }
+                }
+                
             }
             _frame.setVisible(true);
         }
@@ -80,14 +88,21 @@ public class LookUpSTORM_ implements PlugIn {
        // start ImageJ
        new ImageJ();
        
-       String path = "C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/Sim/";
+       String path = "C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/Challange/";
        String cali = "sequence-as-stack-Beads-AS-Exp.yaml";
-       String img = "sunburst2.SPE";
+       String arguments = "cali:" + path + cali + ";threshold:250";
+       
+       ij.ImagePlus image = new ij.ImagePlus(path + "sequence-as-stack-MT0.N1.LD-AS-Exp.tif");
+       
+       //String path = "C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/Sim/";
+       //String cali = "sequence-as-stack-Beads-AS-Exp.yaml";
+       //String img = "sunburst2.SPE";
+       //String arguments = "cali:" + path + cali + ";threshold:10";
        //ij.ImagePlus image = SpeFile_.open(path, "NewPlatelets_c500_f700_50mM_TestRT_red_015.SPE");
-       ij.ImagePlus image = SpeFile_.open(path, img);
+       //ij.ImagePlus image = SpeFile_.open(path, img);
         //ij.ImagePlus image = SpeFile_.open(path, "cross.SPE");
        image.show();
        
-       IJ.runPlugIn(clazz.getName(), path + cali);
+       IJ.runPlugIn(clazz.getName(), arguments);
    }
 }

@@ -79,6 +79,7 @@ public:
 
 	void clearSMLMImageReady();
 
+	// fit the image provided
 	bool processImage(ImageU16 image, int frame);
 
 	void setImageSize(int width, int height);
@@ -131,9 +132,16 @@ public:
 	void setRenderScale(double scale);
 	void setRenderSize(int width, int height);
 
+	// calculate the number of photons of a fitted molecule base on the EM CCD parameters 
+	// ADU (Camera ADC count to photons) and EM-Gain
+	double calculatePhotons(const Molecule& mol, const double adu, const double gain) const;
+
+	// calculate the Cramér–Rao lower bound of a fitted molecule base on the EM CCD 
+	// parameters ADU (Camera ADC count to photons) and EM-Gain and the final pixel size in nm
 	bool calculateCRLB(const Molecule &mol, double *crlb, const double adu, 
 		const double gain, const double offset, const double pixelSize) const;
 
+	// restore intial conditions to fit a new image
 	void reset();
 
 #ifdef JNI_EXPORT_LUT

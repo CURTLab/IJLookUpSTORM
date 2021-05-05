@@ -85,7 +85,7 @@ public:
 			double yfit;
 			double time_us;
 		};
-		double data[7];
+		double data[9];
 	};
 };
 

@@ -61,6 +61,12 @@ public:
 	// returns the window size of the templates in pixels
 	inline constexpr size_t windowSize() const;
 
+	// returns the number of lateral templates needed to fullfil the condition rangeLat/dLat
+	inline constexpr size_t countLat() const;
+
+	// returns the number of axial templates needed to fullfil the condition rangeAx/dAx
+	inline constexpr size_t countAx() const;
+
 	// returns the lateral step size in pixels
 	inline constexpr double dLat() const;
 
@@ -91,6 +97,9 @@ public:
 	// returns the array size for the generated LUT
 	inline constexpr const size_t dataSize() const;
 
+	size_t lookupIndex(double x, double y, double z) const;
+	std::tuple<double, double, double> lookupPosition(size_t index) const;
+
 protected:
 	// called before the template loop starts
 	virtual void preTemplates(size_t windowSize, double dLat, double dAx, double rangeLat, double rangeAx) = 0;
@@ -106,6 +115,8 @@ private:
 	double* m_data;
 	size_t m_dataSize;
 	size_t m_windowSize;
+	size_t m_countLat;
+	size_t m_countAx;
 	double m_dLat;
 	double m_dAx;
 	double m_rangeLat;
@@ -127,6 +138,18 @@ inline
 constexpr size_t LUT::windowSize() const
 {
 	return m_windowSize;
+}
+
+inline 
+constexpr size_t LUT::countLat() const
+{
+	return m_countLat;
+}
+
+inline 
+constexpr size_t LUT::countAx() const
+{
+	return m_countAx;
 }
 
 inline
