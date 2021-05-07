@@ -31,6 +31,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <fstream>
 
 using namespace LookUpSTORM;
 
@@ -116,6 +117,41 @@ void LUT::release()
     delete m_data;
 }
 
+bool LookUpSTORM::LUT::save(const std::string& fileName)
+{
+    if (!isValid())
+        return false;
+
+    std::fstream file(fileName, std::ios::out | std::ios::binary);
+    if (!file)
+        return false;
+
+    struct HeaderLUT {
+        char id[8] = { 'L','U','T','D','S','M','L','M' };
+        size_t dataSize;
+        size_t indices;
+        size_t windowSize;
+        double dLat;
+        double dAx;
+        double rangeLat;
+        double rangeAx;
+    } hdr;
+
+    hdr.dataSize = m_dataSize * sizeof(double);
+    hdr.indices = m_countAx * m_countLat * m_countLat;
+    hdr.windowSize = m_windowSize;
+    hdr.dLat = m_dLat;
+    hdr.dAx = m_dAx;
+    hdr.rangeLat = m_rangeLat;
+    hdr.rangeAx = m_rangeAx;
+
+    file.write((const char*)&hdr, sizeof(hdr));
+    file.write((const char*)m_data, hdr.dataSize);
+
+    file.close();
+    return true;
+}
+
 size_t LUT::lookupIndex(double x, double y, double z) const
 {
     const size_t xi = static_cast<size_t>(std::round((x - m_minLat) / m_dLat));
@@ -136,4 +172,12 @@ std::tuple<double, double, double> LookUpSTORM::LUT::lookupPosition(size_t index
     const double z = m_minAx + zidx * m_dAx;
 
     return { x, y, z };
+}
+
+size_t LookUpSTORM::LUT::calculateUsageBytes(size_t windowSize, double dLat, double dAx, double rangeLat, double rangeAx)
+{
+    const double minLat = std::floor((windowSize - rangeLat) / 2);
+    const size_t countLat = static_cast<size_t>(std::floor((((windowSize - 2.0 * minLat) / dLat) + 1)));
+    const size_t countAx = static_cast<size_t>(std::floor(((rangeAx / dAx) + 1)));
+    return countLat * countLat * countAx * 4ull * sizeof(double) * (windowSize * windowSize);
 }
