@@ -63,7 +63,10 @@ public:
 
 	std::pair<int, int> map(double x, double y) const;
 
+	bool renderToImage(uint32_t* imagePtr, int width, int height, Rect region = Rect());
+
 	void setRenderImage(uint32_t* imagePtr, int width, int height, double scaleX, double scaleY);
+	void setRenderImage(ImageU32 image);
 	bool updateImage(Rect region = Rect());
 	const uint32_t* renderImagePtr() const;
 

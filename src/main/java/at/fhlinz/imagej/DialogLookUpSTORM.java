@@ -33,7 +33,9 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.WindowManager;
+import ij.io.FileSaver;
 import ij.measure.ResultsTable;
+import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -86,8 +88,9 @@ public class DialogLookUpSTORM extends JFrame {
     private final JCheckBox _checkSaveRend;
     private final JCheckBox _checkSaveLocs;
     private final JButton _fitButton;
-    private final RenderThread _renderThread;
+    private final JCheckBox _checkShowLocs;
     private Calibration _cali;
+    private ImagePlus _renderImagePlus;
     
     /** 
      * Constructor
@@ -96,7 +99,6 @@ public class DialogLookUpSTORM extends JFrame {
      */
     DialogLookUpSTORM(LookUpSTORM lookUpSTORM) {
         _lookUpSTORM = lookUpSTORM;
-        _renderThread = new RenderThread(_lookUpSTORM);
         
         super.setTitle("LookUpSTORM");
         super.getContentPane().setLayout(new BoxLayout(super.getContentPane(), BoxLayout.Y_AXIS));
@@ -139,9 +141,15 @@ public class DialogLookUpSTORM extends JFrame {
             panelLUT.add(label("Source:"));
             _comboSource = new JComboBox(new String[]{"Astigmatism", "Astigmatism Integrated Gauss", "From Binary File"});
             panelLUT.add(_comboSource);
-
+            _comboSource.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    updateRAMUsage();
+                }
+            });
+            
             panelLUT.add(label("Window Size:"));
-            _comboWinSize = new JComboBox(new String[]{"9", "11"});
+            _comboWinSize = new JComboBox(new String[]{"9", "11", "13", "15"});
             panelLUT.add(_comboWinSize);
 
             panelLUT.add(label("Lateral Delta:"));
@@ -294,6 +302,10 @@ public class DialogLookUpSTORM extends JFrame {
             _checkSaveLocs = new JCheckBox("Save localizations");
             _checkSaveLocs.setSelected(true);
             panelGeneral.add(_checkSaveLocs);
+            
+            _checkShowLocs = new JCheckBox("Show localization table");
+            _checkShowLocs.setSelected(false);
+            panelGeneral.add(_checkShowLocs);
         }
         _pane.addTab("General", panelGeneral);
         
@@ -358,6 +370,14 @@ public class DialogLookUpSTORM extends JFrame {
         _spinnerThreshold.setValue(threshold);
     }
     
+    /**
+     * Set the pixel size of the input image stream in nm
+     * @param pixelSize pixelSize in nm
+     */
+    public void setPixelSize(double pixelSize) {
+        _spinnerPixelSize.setValue(pixelSize);
+    }
+    
     /** 
      * Set the output path for the real time experiment
      * @param path 
@@ -367,11 +387,19 @@ public class DialogLookUpSTORM extends JFrame {
     }
     
     /** 
-     * Set the pixel size of the input image stream in nm
-     * @param pixelSize_nm 
+     * Set the photon conversion factor in photons/adc
+     * @param adu photon conversion factor 
      */
-    public void setPixelSize(double pixelSize_nm) {
-        _spinnerPixelSize.setValue(pixelSize_nm);
+    public void setPhotonConverstionFactor(double adu) {
+        _spinnerADU.setValue(adu);
+    }
+    
+    /** 
+     * Set the EM-CCD camera EM gain factor
+     * @param gain EM gain factor
+     */
+    public void setEMGain(double gain) {
+        _spinnerGain.setValue(gain);
     }
     
     private static JLabel label(String text) {
@@ -437,8 +465,7 @@ public class DialogLookUpSTORM extends JFrame {
             final double rangeLat = (double)_spinnerLatRange.getValue();
             final double dAx = (double)_spinnerAxDelta.getValue();
             final double rangeAx = (double)_spinnerAxRange.getValue();
-            final int winSize = _comboWinSize.getSelectedIndex() == 1 ? 11 : 9;
-            
+            final int winSize = Integer.parseInt((String)_comboWinSize.getSelectedItem());
             // check memory
             final long usage = LookUpSTORM.calculateBytesForLUT(winSize, dLat, dAx, rangeLat, rangeAx);
             final long heap = Runtime.getRuntime().maxMemory();
@@ -453,17 +480,19 @@ public class DialogLookUpSTORM extends JFrame {
                         JOptionPane.ERROR_MESSAGE);
                 return;
             } 
+            DialogLookUpSTORM dialog = this;
             // finally populate the LUT in a thread
             Runnable generator = new Runnable() {
                 @Override
                 public void run() {
                     final long t0 = System.nanoTime();
+                    _lookUpSTORM.releaseLookUpTable();
                     LUT lut = null;
                     _buttonGenerate.setEnabled(false);
                     if (selectedSource.equals("Astigmatism")) {
                         AstigmatismLUT lutgen = new AstigmatismLUT(_cali);
                         if (!lutgen.populate(winSize, dLat, dAx, rangeLat, rangeAx)) {
-                            JOptionPane.showMessageDialog(null, 
+                            JOptionPane.showMessageDialog(dialog, 
                                     "Could not generate AstigmatismLUT!", "Error LookUpSTORM", 
                                     JOptionPane.ERROR_MESSAGE);
                             _buttonGenerate.setEnabled(true);
@@ -473,7 +502,7 @@ public class DialogLookUpSTORM extends JFrame {
                     } else if (selectedSource.equals("Astigmatism Integrated Gauss")) {
                         AstigmatismErfLUT lutgen = new AstigmatismErfLUT(_cali);
                         if (!lutgen.populate(winSize, dLat, dAx, rangeLat, rangeAx)) {
-                            JOptionPane.showMessageDialog(null, 
+                            JOptionPane.showMessageDialog(dialog, 
                                     "Could not generate AstigmatismLUT!", "Error LookUpSTORM", 
                                     JOptionPane.ERROR_MESSAGE);
                             _buttonGenerate.setEnabled(true);
@@ -483,7 +512,7 @@ public class DialogLookUpSTORM extends JFrame {
                     }
                     _buttonGenerate.setEnabled(true);
                     if (!_lookUpSTORM.setLUT(lut)) {
-                        JOptionPane.showMessageDialog(null, 
+                        JOptionPane.showMessageDialog(dialog, 
                                 "Failed to set AstigmatismLUT for DLL!", "Error LookUpSTORM", 
                                 JOptionPane.ERROR_MESSAGE);
                         return;
@@ -527,8 +556,12 @@ public class DialogLookUpSTORM extends JFrame {
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
+        _lookUpSTORM.reset();
+        
         ImageStack stack = imp.getStack();
-        _lookUpSTORM.setImagePara(stack.getWidth(), stack.getHeight());
+        int w = imp.getWidth();
+        int h = imp.getHeight();
+        _lookUpSTORM.setImagePara(w, h);
         
         final double dLat = (double)_spinnerLatDelta.getValue();
         final int threshold = (int)_spinnerThreshold.getValue();
@@ -538,9 +571,10 @@ public class DialogLookUpSTORM extends JFrame {
         _lookUpSTORM.setThreshold(threshold);
         _lookUpSTORM.setEpsilon(eps);
         _lookUpSTORM.setMaxIter(maxIter);
-        _renderThread.setSize(stack.getWidth() * scale, stack.getHeight() * scale);
-        _renderThread.setImageName(imp.getTitle());
         
+        final int rw = w * scale;
+        final int rh = h * scale;
+
         if (dLat > (1.0/scale)) {
             JOptionPane.showMessageDialog(this, 
                     "Render image resolution is bigger than the lateral steps. "
@@ -548,59 +582,76 @@ public class DialogLookUpSTORM extends JFrame {
                     JOptionPane.WARNING_MESSAGE);
         }
         
-        _renderThread.startRendering();
+        ColorProcessor renderImg = new ColorProcessor(rw, rh);
+        _renderImagePlus = new ImagePlus("LookUpSTORM Rendering", renderImg);
+        _renderImagePlus.show();
+        
+        _lookUpSTORM.clearRenderingReady();
+        
         Runnable fitter = new Runnable() {
             @Override
             public void run() {
                 startAnalysisGUI();
+                
+                imp.lock();
+                
                 final int frames = stack.getSize();
                 final long t0 = System.nanoTime();
                 _lookUpSTORM.reset();
                 for (int frame = 0; frame < frames; frame++) {
-                    ImageProcessor ip = stack.getProcessor(frame + 1);
-                    if (!_lookUpSTORM.feedImage(ip, frame)) 
-                        continue;
-                    _lookUpSTORM.waitForLocFinished(1, 100);
                     IJ.showProgress(frame, frames);
+                    ImageProcessor ip = stack.getProcessor(frame + 1);
+                    _lookUpSTORM.processFrame((short[])ip.getPixels(), w, h, 
+                            frame, (int[])renderImg.getPixels(), rw, rh);
+                    if (_lookUpSTORM.isRenderingReady()) {
+                        _renderImagePlus.draw();  
+                        _renderImagePlus.updateImage();
+                        _lookUpSTORM.clearRenderingReady();
+                    }
                 }
-                _renderThread.stopRendering();
                 final long t1 = System.nanoTime();
                 stopAnalysisGUI();
                 final String out = "Found " + _lookUpSTORM.numberOfAllLocs() + " emitters in " + (t1 - t0) / 1E9 + " s!";
                 IJ.showStatus(out);
                 System.out.println(out);
                 
-                final double pixelSize = (double)_spinnerPixelSize.getValue();
-                final double adu = (double)_spinnerADU.getValue();
-                final double gain = (double)_spinnerGain.getValue();
-                final double baseline = (double)_spinnerBaseline.getValue();
+                imp.unlock();
+                
+                if (_checkShowLocs.isSelected()) {
+                    final double pixelSize = (double)_spinnerPixelSize.getValue();
+                    final double adu = (double)_spinnerADU.getValue();
+                    final double gain = (double)_spinnerGain.getValue();
+                    final double baseline = (double)_spinnerBaseline.getValue();
 
-                Molecule[] mols = _lookUpSTORM.getFittedMolecules(pixelSize, adu, gain, baseline);
-                ResultsTable table = new ResultsTable();
-                for (int i = 0; i < mols.length; ++i) {
-                    Molecule m = mols[i];
-                    table.incrementCounter();
-                    table.addValue("Frame", m.frame+1);
-                    table.addValue("x / nm", m.x);
-                    table.addValue("y / nm", m.y);
-                    table.addValue("z / nm", m.z);
-                    table.addValue("intensity / photons", m.intensity);
-                    table.addValue("background / photons", m.background);
-                    table.addValue("crlb_x / nm", m.crlb_x);
-                    table.addValue("crlb_y / nm", m.crlb_y);
-                    table.addValue("crlb_z / nm", m.crlb_z);
+                    try {
+                        Molecule[] mols = _lookUpSTORM.getFittedMolecules(pixelSize, adu, gain, baseline);
+                        ResultsTable table = new ResultsTable();
+                        for (int i = 0; i < 100; ++i) {
+                            Molecule m = mols[i];
+                            table.incrementCounter();
+                            table.addValue("Frame", m.frame+1);
+                            table.addValue("x / nm", m.x);
+                            table.addValue("y / nm", m.y);
+                            table.addValue("z / nm", m.z);
+                            table.addValue("intensity / photons", m.intensity);
+                            table.addValue("background / photons", m.background);
+                            table.addValue("crlb_x / nm", m.crlb_x);
+                            table.addValue("crlb_y / nm", m.crlb_y);
+                            table.addValue("crlb_z / nm", m.crlb_z);
+                        }
+                        table.show(imp.getTitle());
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        System.err.println(e.toString());
+                    }
                 }
-                
-                table.show(imp.getTitle());
-                
                 save(imp.getTitle());
+                _lookUpSTORM.releaseRenderImage();
             }
         };
         (new Thread(fitter)).start();
     }
     
     private void doRelease() {
-        _renderThread.release();
         _lookUpSTORM.release();
     }
     
@@ -619,7 +670,7 @@ public class DialogLookUpSTORM extends JFrame {
         final String outBase = outPath + File.separator + inputName;
         System.out.println("Save: " + outBase);
         if (saveRendering) {
-            _renderThread.save(outBase + "_SMLM.png");
+            new FileSaver(_renderImagePlus).saveAsPng(outBase + "_SMLM.png");
         }
         if (saveLocs) {
             final double pixelSize = (double)_spinnerPixelSize.getValue();
@@ -687,7 +738,7 @@ public class DialogLookUpSTORM extends JFrame {
         final double rangeLat = (double)_spinnerLatRange.getValue();
         final double dAx = (double)_spinnerAxDelta.getValue();
         final double rangeAx = (double)_spinnerAxRange.getValue();
-        final int winSize = _comboWinSize.getSelectedIndex() == 1 ? 11 : 9;
+        final int winSize = Integer.parseInt((String)_comboWinSize.getSelectedItem());
         final long bytes = LookUpSTORM.calculateBytesForLUT(winSize, dLat, dAx, rangeLat, rangeAx);
         _ramField.setText(getRAMUsage(bytes));
     }

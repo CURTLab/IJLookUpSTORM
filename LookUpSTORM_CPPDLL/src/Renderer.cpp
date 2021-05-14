@@ -264,6 +264,11 @@ void Renderer::setRenderImage(uint32_t* imagePtr, int width, int height, double 
     setSize(width, height, scaleX, scaleY);
 }
 
+void Renderer::setRenderImage(ImageU32 image)
+{
+    d->renderImage = image;
+}
+
 bool Renderer::updateImage(Rect region)
 {
     if (d->renderImage.isNull())

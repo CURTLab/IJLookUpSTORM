@@ -139,9 +139,10 @@ void Fitter::release()
 		d->lookup = nullptr;
 		d->tableAllocated = false;
 	}
-	d->x0 = {};
-	d->x1 = {};
-	d->JTJ = {};
+	d->x0 = Vector(5, Uninitialized);
+	d->x0 = Vector(5, Uninitialized);
+	d->JTJ = Matrix(5, 5, Uninitialized);
+	d->J = {};
 	d->countIndex = 0;
 	d->winSize = 0;
 }

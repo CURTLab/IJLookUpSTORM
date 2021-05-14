@@ -37,21 +37,35 @@
 
 using namespace LookUpSTORM;
 
-static jarray _JSMLMImageHelper = nullptr;
-static jarray _JLookUpTableHelper = nullptr;
+struct PrimitiveArray
+{
+	jarray array;
+	void* ptr;
+	JNIEnv* env;
+};
+
+static PrimitiveArray _JLookUpTableHelper = { nullptr };
 
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setLookUpTable___3DIDDDD
 (JNIEnv* env, jobject obj, jdoubleArray lookup, jint windowSize, jdouble dLat, jdouble dAx, jdouble rangeLat, jdouble rangeAx)
 {
 	const int size = env->GetArrayLength(lookup);
+	if (env->ExceptionCheck()) {
+		std::cerr << "LookUpSTORM_CPPDLL: ExceptionCheck triggered (1)!" << std::endl;
+		return false;
+	}
+
+	Java_at_fhlinz_imagej_LookUpSTORM_releaseLookUpTable(env, obj);
 
 	jboolean iscopy = false;
-	jdouble* data = (jdouble*)env->GetPrimitiveArrayCritical(lookup, &iscopy);
-	if (data == nullptr) {
+	jdouble* data = (jdouble*)(env->GetPrimitiveArrayCritical(lookup, &iscopy));
+	if (env->ExceptionCheck()) {
+		std::cerr << "LookUpSTORM_CPPDLL: ExceptionCheck triggered (2)!" << std::endl;
+		return false;
+	} else if (data == nullptr) {
 		std::cerr << "LookUpSTORM_CPPDLL: Could not get primitive array for lookup table!" << std::endl;
 		return false;
 	}
-	_JLookUpTableHelper = lookup;
 
 	Fitter& f = Controller::inst()->fitter();
 	if (!f.setLookUpTable(data, size, iscopy, windowSize, dLat, dAx, rangeLat, rangeAx)) {
@@ -59,6 +73,22 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setLookUpTable___3D
 		env->ReleasePrimitiveArrayCritical(lookup, data, JNI_ABORT);
 		return false;
 	}
+	else {
+		env->ReleasePrimitiveArrayCritical(lookup, data, JNI_COMMIT);
+	}
+	if (iscopy) {
+		env->ReleasePrimitiveArrayCritical(lookup, data, JNI_ABORT);
+		if (env->ExceptionCheck()) {
+			std::cerr << "LookUpSTORM_CPPDLL: ExceptionCheck triggered (3)!" << std::endl;
+			return false;
+		}
+	}
+	else {
+		_JLookUpTableHelper.array = lookup;
+		_JLookUpTableHelper.ptr = data;
+		_JLookUpTableHelper.env = env;
+	}
+
 	Controller::inst()->renderer().setSettings(f.minAx(), f.maxAx(), f.deltaAx(), 1.f);
 	Controller::inst()->reset();
 	return true;
@@ -104,11 +134,16 @@ JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setLookUpTable__Lja
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_releaseLookUpTable
 (JNIEnv* env, jobject)
 {
-	Fitter& f = Controller::inst()->fitter();
-	if ((f.lookUpTablePtr() != nullptr) && (_JLookUpTableHelper != nullptr)) {
-		env->ReleasePrimitiveArrayCritical(_JLookUpTableHelper, (void*)f.lookUpTablePtr(), JNI_ABORT);
-		_JLookUpTableHelper = nullptr;
+	_JLookUpTableHelper.env = env;
+	if ((_JLookUpTableHelper.env != nullptr) && (_JLookUpTableHelper.array != nullptr)) {
+		_JLookUpTableHelper.env->ReleasePrimitiveArrayCritical(_JLookUpTableHelper.array, _JLookUpTableHelper.ptr, JNI_ABORT);
+		if (_JLookUpTableHelper.env->ExceptionCheck()) {
+			_JLookUpTableHelper.env->ExceptionDescribe();
+			_JLookUpTableHelper.env->ExceptionClear();
+		}
+		_JLookUpTableHelper = { nullptr };
 	}
+	Fitter& f = Controller::inst()->fitter();
 	f.release();
 	return true;
 }
@@ -203,32 +238,46 @@ JNIEXPORT jint JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getImageHeight
 	return Controller::inst()->imageHeight();
 }
 
-JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_feedImageData
-(JNIEnv* env, jobject, jshortArray jImgArray, jint frame)
+JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_processFrame
+(JNIEnv* env, jobject, jshortArray jImage, jint width, jint height, jint frame, 
+	jintArray jRenderImage, jint renderWidth, jint renderHeight)
 {
-	const int len = env->GetArrayLength(jImgArray);
-
 	jboolean iscopy = false;
-	jshort* elems = (jshort*)env->GetPrimitiveArrayCritical(jImgArray, &iscopy);
-
-	const int w = Controller::inst()->imageWidth();
-	const int h = Controller::inst()->imageHeight();
-
-	if (len != (w * h))
+	int len = env->GetArrayLength(jImage);
+	jshort* img = (jshort*)env->GetPrimitiveArrayCritical(jImage, &iscopy);
+	ImageU16 image(width, height, (uint16_t*)img, false);
+	if (img == nullptr) {
+		std::cerr << "LookUpSTORM_CPPDLL: processFrame: Image error!" << std::endl;
 		return 0;
+	} else if (len != (width * height)) {
+		return 0;
+	}
+	if ((width != Controller::inst()->imageWidth()) || (width != Controller::inst()->imageWidth()))
+		Controller::inst()->setImageSize(width, height);
 
-	ImageU16 image(w, h, (uint16_t*)elems, false);
+	Controller::inst()->renderer().setSize(renderWidth, renderHeight, double(renderWidth) / width, double(renderHeight) / height);
+
 	Controller::inst()->processImage(image, frame);
-	
-	env->ReleasePrimitiveArrayCritical(jImgArray, elems, JNI_ABORT);
+
+	env->ReleasePrimitiveArrayCritical(jImage, img, JNI_ABORT);
+
+	len = env->GetArrayLength(jRenderImage);
+	jint* renderImg = (jint*)env->GetPrimitiveArrayCritical(jRenderImage, &iscopy);
+	if (renderImg == nullptr) {
+		std::cerr << "LookUpSTORM_CPPDLL: processFrame: Render image error!" << std::endl;
+		return 0;
+	}
+	ImageU32 renderImage(renderWidth, renderHeight, (uint32_t*)renderImg, false);
+	if (Controller::inst()->renderToImage(renderImage, frame)) {
+		// copy back the content and free the elems buffer
+		env->ReleasePrimitiveArrayCritical(jRenderImage, renderImg, 0);
+	}
+	else {
+		// copy back the content and free the elems buffer
+		env->ReleasePrimitiveArrayCritical(jRenderImage, renderImg, JNI_ABORT);
+	}
 
 	return 1;
-}
-
-JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_isLocFinish
-(JNIEnv*, jobject)
-{
-	return Controller::inst()->isLocFinished();
 }
 
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_isReady
@@ -259,35 +308,10 @@ JNIEXPORT void JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setVerbose
 	Controller::inst()->setVerbose(verbose);
 }
 
-JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_setRenderImage
-(JNIEnv*env, jobject jobj, jintArray jImgArray, jint rw, jint rh)
-{
-	const int w = Controller::inst()->imageWidth();
-	const int h = Controller::inst()->imageHeight();
-	const int len = env->GetArrayLength(jImgArray);
-	const int expLen = rw * rh;
-	if (len != expLen) {
-		std::cerr << "LookUpSTORM_CPPDLL: setSMLMImage: Image size does not match with the size of the array! (Got " << len << " expected " << expLen << ")" << std::endl;
-		return 0;
-	}
-	Java_at_fhlinz_imagej_LookUpSTORM_releaseRenderImage(env, jobj);
-	jboolean iscopy = false;
-	jint* img = (jint*)env->GetPrimitiveArrayCritical(jImgArray, &iscopy);
-	if (img == nullptr)
-		return 0;
-	_JSMLMImageHelper = jImgArray;
-	Controller::inst()->renderer().setRenderImage((uint32_t*)img, rw, rh, double(rw)/w, double(rh)/h);
-	return 1;
-}
-
 JNIEXPORT jboolean JNICALL Java_at_fhlinz_imagej_LookUpSTORM_releaseRenderImage
 (JNIEnv* env, jobject)
 {
-	Renderer& r = Controller::inst()->renderer();
-	if ((r.renderImagePtr() == nullptr) || (_JSMLMImageHelper == nullptr))
-		return false;
-	env->ReleasePrimitiveArrayCritical(_JSMLMImageHelper, (void*)r.renderImagePtr(), JNI_ABORT);
-	_JSMLMImageHelper = nullptr;
+	Controller::inst()->renderer().release();
 	return true;
 }
 

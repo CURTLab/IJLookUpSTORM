@@ -48,8 +48,7 @@ class ControllerPrivate
 {
 public:
     inline ControllerPrivate()
-        : isLocFinished(false)
-        , isSMLMImageReady(false)
+        : isSMLMImageReady(false)
         , nms(1, 6)
         , imageWidth(0)
         , imageHeight(0)
@@ -63,7 +62,6 @@ public:
         numberOfDetectedLocs.store(0);
     }
 
-    std::atomic<bool> isLocFinished;
     std::atomic<bool> isSMLMImageReady;
     LocalMaximumSearch nms;
     int imageWidth;
@@ -81,6 +79,7 @@ public:
     Renderer renderer;
     std::atomic<bool> verbose;
     Calibration cali;
+    Rect changedRegion;
 
 };
 
@@ -164,7 +163,7 @@ LookUpSTORM::Controller::~Controller()
 
 bool Controller::isReady() const
 {
-    return d->renderer.isReady() && d->fitter.isReady() && (d->imageWidth > 0) && (d->imageHeight > 0);
+    return /*d->renderer.isReady() && */d->fitter.isReady() && (d->imageWidth > 0) && (d->imageHeight > 0);
 }
 
 bool LookUpSTORM::Controller::generate(LUT& lut, size_t windowSize, double dLat, double dAx, 
@@ -203,11 +202,6 @@ bool LookUpSTORM::Controller::setLUT(const LUT& lut)
     return true;
 }
 
-bool Controller::isLocFinished() const
-{
-    return d->isLocFinished.load();
-}
-
 bool Controller::isSMLMImageReady() const
 {
     return d->isSMLMImageReady.load();
@@ -227,7 +221,6 @@ bool Controller::processImage(ImageU16 image, int frame)
         return false;
     }
 
-    d->isLocFinished.store(false);
     const auto t0 = std::chrono::high_resolution_clock::now();
 
     const size_t winSize = d->fitter.windowSize();
@@ -235,13 +228,12 @@ bool Controller::processImage(ImageU16 image, int frame)
     d->nms.setBorder(winSize / 2);
 
     const uint16_t threshold = d->threshold.load();
-    const int updateRate = d->renderUpdateRate.load();
     const double timeoutMS = d->timeoutMS.load();
 
     auto features = d->nms.find(image, d->threshold);
     Molecule m;
     Rect bounds = image.rect();
-    Rect changedRegion;
+    d->changedRegion = {};
     d->detectedMolecues.clear();
     //std::cout << "Features: " << features.size() << std::endl;
     for (const auto& f : features) {
@@ -277,7 +269,7 @@ bool Controller::processImage(ImageU16 image, int frame)
             m.x += region.left();
             m.y += region.top();
 
-            changedRegion.extendByPoint(d->renderer.map(m.x, m.y));
+            d->changedRegion.extendByPoint(d->renderer.map(m.x, m.y));
             d->renderer.set(m.x, m.y, m.z);
 
             d->detectedMolecues.push_back(m);
@@ -292,25 +284,13 @@ bool Controller::processImage(ImageU16 image, int frame)
         }
     }
     const auto t1 = std::chrono::high_resolution_clock::now();
-
-    // update SMLM image
-    if (!d->isSMLMImageReady && d->enableRendering.load() && ((updateRate <= 1) || ((changedRegion.area() > 25) && (frame > 1) && (frame % updateRate == 0)))) {
-        d->renderer.updateImage();
-        changedRegion = {};
-        d->isSMLMImageReady = true;
-    }
-
-    const auto t2 = std::chrono::high_resolution_clock::now();
-
+    
     d->frameFittingTimeMS.store(std::chrono::duration<double, std::milli>(t1 - t0).count());
-    d->renderTimeMS.store(std::chrono::duration<double, std::milli>(t2 - t1).count());
-
 
     if (verbose)
         std::cout << "Fitted " << d->detectedMolecues.size() << " emitter of frame " << frame << " in " << d->frameFittingTimeMS << " ms" << std::endl;
 
     d->numberOfDetectedLocs.store(static_cast<uint16_t>(d->detectedMolecues.size()));
-    d->isLocFinished.store(true);
     return true;
 }
 
@@ -328,6 +308,30 @@ int Controller::imageWidth() const
 int Controller::imageHeight() const
 {
     return d->imageHeight;
+}
+
+bool Controller::renderToImage(ImageU32 image, int frame)
+{
+    const int updateRate = d->renderUpdateRate.load();
+
+    // update SMLM image
+    if (!d->isSMLMImageReady && d->enableRendering.load() && ((updateRate <= 1) || ((d->changedRegion.area() > 25) && (frame > 1) && (frame % updateRate == 0)))) {
+
+        const auto t1 = std::chrono::high_resolution_clock::now();
+
+        d->renderer.setRenderImage(image);
+
+        d->renderer.updateImage();
+        d->changedRegion = {};
+        d->isSMLMImageReady = true;
+
+        const auto t2 = std::chrono::high_resolution_clock::now();
+
+        d->renderTimeMS.store(std::chrono::duration<double, std::milli>(t2 - t1).count());
+
+        return true;
+    }
+    return false;
 }
 
 void Controller::setThreshold(uint16_t threshold)
@@ -524,9 +528,12 @@ bool Controller::calculateCRLB(const Molecule& mol, double* crlb, const double a
 
 void Controller::reset()
 {
-    d->isLocFinished.store(false);
     d->isSMLMImageReady.store(false);
     d->numberOfDetectedLocs.store(0);
     d->mols.clear();
     d->renderer.clear();
+    d->imageWidth = 0;
+    d->imageHeight = 0;
+    d->frameFittingTimeMS = 0;
+    d->timeoutMS = 250;
 }

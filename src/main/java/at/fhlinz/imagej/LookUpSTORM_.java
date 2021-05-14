@@ -60,9 +60,14 @@ public class LookUpSTORM_ implements PlugIn {
                         _frame.setFileName(a.substring(5));
                     } else if (a.startsWith("threshold:")) {
                         _frame.setThreshold(Integer.parseInt(a.substring(10)));
+                    } else if (a.startsWith("pixelSize:")) {
+                        _frame.setPixelSize(Double.parseDouble(a.substring(10)));
+                    } else if (a.startsWith("adu:")) {
+                        _frame.setPhotonConverstionFactor(Double.parseDouble(a.substring(4)));
+                    } else if (a.startsWith("gain:")) {
+                        _frame.setEMGain(Double.parseDouble(a.substring(5)));
                     }
                 }
-                
             }
             _frame.setVisible(true);
         }
@@ -93,16 +98,20 @@ public class LookUpSTORM_ implements PlugIn {
        String arguments = "cali:" + path + cali + ";threshold:250";
        
        ij.ImagePlus image = new ij.ImagePlus(path + "sequence-as-stack-MT0.N1.LD-AS-Exp.tif");
-       
-       //String path = "C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/Sim/";
-       //String cali = "sequence-as-stack-Beads-AS-Exp.yaml";
-       //String img = "sunburst2.SPE";
-       //String arguments = "cali:" + path + cali + ";threshold:10";
-       //ij.ImagePlus image = SpeFile_.open(path, "NewPlatelets_c500_f700_50mM_TestRT_red_015.SPE");
-       //ij.ImagePlus image = SpeFile_.open(path, img);
-        //ij.ImagePlus image = SpeFile_.open(path, "cross.SPE");
        image.show();
        
+       /*String path = "C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/Sim/";
+       String cali = "sequence-as-stack-Beads-AS-Exp.yaml";
+       String img = "sunburst2.SPE";
+       String arguments = "cali:" + path + cali + ";threshold:10";
+       //ij.ImagePlus image = SpeFile_.open(path, "NewPlatelets_c500_f700_50mM_TestRT_red_015.SPE");
+       ij.ImagePlus image = SpeFile_.open(path, img);
+        //ij.ImagePlus image = SpeFile_.open(path, "cross.SPE");
+       image.show();
+       */
+       
+       //IJ.runPlugIn(clazz.getName(), arguments);
+       //String arguments = "cali:C:/Users/A41316/Desktop/FuE/Papers/RTStorm/Data/CRLB/Cali_CloseToFar_f700_c1000_red_003.yaml;threshold:75;pixelSize:166.667;adu:58.2;gain:100";
        IJ.runPlugIn(clazz.getName(), arguments);
    }
 }

@@ -72,9 +72,6 @@ public:
 	bool setLUT(const LUT& lut);
 
 	// thread-safe
-	bool isLocFinished() const;
-
-	// thread-safe
 	bool isSMLMImageReady() const;
 
 	void clearSMLMImageReady();
@@ -85,6 +82,8 @@ public:
 	void setImageSize(int width, int height);
 	int imageWidth() const;
 	int imageHeight() const;
+
+	bool renderToImage(ImageU32 image, int frame);
 
 	// thread-safe
 	void setThreshold(uint16_t threshold);

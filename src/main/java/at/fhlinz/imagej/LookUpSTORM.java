@@ -138,39 +138,35 @@ public class LookUpSTORM {
     public native int numberOfAllLocs();
     
     /** 
-     * 
-     * @param imageWidth
-     * @param imageHeight 
+     * Set the input image parameters
+     * @param imageWidth width of image in pixels
+     * @param imageHeight height of image in pixels
      */
     public native void setImagePara(int imageWidth, int imageHeight);
     
-    /** 
-     * 
-     * @return 
+    /**
+     * @return width of input image in pixels
      */
     public native int getImageWidth();
     
     /** 
-     * 
-     * @return 
+     * @return height of input image in pixels
      */
     public native int getImageHeight();
-    
-    /** 
+
+     /** 
      * 
      * @param data
+     * @param width
+     * @param height
      * @param frame
+     * @param renderImage
+     * @param renderWidth
+     * @param renderHeight
      * @return 
      */
-    public native boolean feedImageData(short data[], int frame);
-    
-    /** 
-     * Flag to indicate when the feeded image is fitted and processed
-     * @return Returns true if the feeded image is fitted and processed
-     * @see LookUpSTORM#feedImage(ij.process.ImageProcessor, int) 
-     * @see LookUpSTORM#feedImageData(short[], int) 
-     */
-    public native boolean isLocFinish();
+    public native boolean processFrame(short data[], int width, int height, 
+            int frame, int renderImage[], int renderWidth, int renderHeight);
     
     /**
      * Checks if all needed parameters are set
@@ -199,20 +195,8 @@ public class LookUpSTORM {
     public native void setVerbose(boolean verbose);
     
     /** 
-     * Sets a pointer (should be uint32) to a allocated image in which the
-     * results of the real time analysis are rendered(render target)
-     * @param pixels pointer to a allocated image (uint32)
-     * @param SMLMimageWidth supplied image width
-     * @param SMLMimageHeigt supplied image height
-     * @return Returns false if the image size does not match the array size
-     * @see LookUpSTORM#releaseRenderImage() 
-     */
-    public native boolean setRenderImage(int[] pixels, int SMLMimageWidth, int SMLMimageHeigt);
-    
-    /** 
      * Release the memory of the set render image target
      * @return Returns false if no memory was in used
-     * @see LookUpSTORM#setRenderImage(int[], int, int) 
      */
     public native boolean releaseRenderImage();
     
@@ -285,18 +269,6 @@ public class LookUpSTORM {
     }
     
     /**
-     * Feed a imagej image to the CPPDLL for fitting
-     * @param ip 16-bit unsigned short image (0-65535)
-     * @param frame Index of supplied image (zero starting index)
-     * @return true if image could be processed (size is the same as set)
-     * @see LookUpSTORM#setImagePara(int, int) 
-     * @see LookUpSTORM#feedImageData(short[], int) 
-     */
-    public boolean feedImage(ij.process.ImageProcessor ip, int frame) {
-        return feedImageData((short [])ip.getPixels(), frame);
-    }
-    
-    /**
      * Helper function to set the LUT
      * @param lut Java LUT interface
      * @return Returns true if LUT is valid and could be set
@@ -305,30 +277,6 @@ public class LookUpSTORM {
         return setLookUpTable(lut.getLookUpTableArray(), lut.getWindowSize(), 
                               lut.getDeltaLat(), lut.getDeltaAx(), 
                               lut.getLateralRange(), lut.getAxialRange());
-    }
-    
-    /**
-     * Helper function to wait until feeded image is fitted and processes
-     * @param sleepms loop wait time in ms (default 1 ms)
-     * @param timeoutms timeout in ms to stop the loop
-     * @return Return false if the timeout is triggered
-     * @see LookUpSTORM#feedImage(ij.process.ImageProcessor, int) 
-     * @see LookUpSTORM#feedImageData(short[], int) 
-     */
-    public boolean waitForLocFinished(long sleepms, long timeoutms) {
-        final long startTime = System.nanoTime();
-        while (!isLocFinish()) {
-            if (((System.nanoTime() - startTime) / 1E6) > timeoutms)
-                return false;
-            if (sleepms > 0) {
-                try {
-                    sleep(1); // sleep in ms
-                } catch (InterruptedException ex) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
     
     /** 
@@ -370,49 +318,6 @@ public class LookUpSTORM {
                 builder.append(m.crlb_y);
                 builder.append(',');
                 builder.append(m.crlb_z);
-                builder.append('\n');
-                stream.write(builder.toString());
-            }
-            stream.close();
-            return true;
-        } catch (FileNotFoundException ex) {
-            System.out.println("LookUpSTORM: Could not save file " + fileName);
-            return false;
-        }
-    }
-    
-    /** 
-     * Save all detected localizations since the last reset to a CSV file.
-     * Header: index,frame,x_nm,y_nm,z_nm,intensity,background,time
-     * @param fileName Output CSV file name.
-     * @param pixelSize Pixels size of the input image in nm
-     * @return 
-     * @see LookUpSTORM#getAllLocs() 
-     */
-    public boolean saveLocsCSV(String fileName, double pixelSize) {
-        double[][] locs = getAllLocs();
-        try {
-            PrintWriter stream = new PrintWriter(fileName);
-            stream.write("index,frame,x_nm,y_nm,z_nm,intensity,background,time\n");
-            int idx = 1;
-            for (double[] l:locs) {
-                // [bg,peak,x,y,z,frame,xfit,yfit,time]
-                StringBuilder builder = new StringBuilder();
-                builder.append(idx++);
-                builder.append(',');
-                builder.append(l[5] + 1);
-                builder.append(',');
-                builder.append(l[2] * pixelSize);
-                builder.append(',');
-                builder.append(l[3] * pixelSize);
-                builder.append(',');
-                builder.append(l[4]);
-                builder.append(',');
-                builder.append(l[1]);
-                builder.append(',');
-                builder.append(l[0]);
-                builder.append(',');
-                builder.append(l[8]);
                 builder.append('\n');
                 stream.write(builder.toString());
             }
