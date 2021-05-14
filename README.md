@@ -4,10 +4,14 @@ LookUpSTORM is an 3D real-time single molecule localization microscopy (SMLM) fi
 
 This is an example implementation for ImageJ 1.x.
 
-# Algorithm
+# Pre-Release
+Pre-Pelease Image 1.x Plugin for Windows [link to download](https://filebox.fhooecloud.at/index.php/s/c9Xe85ybzMrLBdM)
 
-The lookup table is populated templates (e.g. 2D elliptical Gaussian functions) that approximate the point spread function (PSF) of the optical measurement system. 
-
+# Data
+Experimental data for the unpublished paper *Real-Time 3D Single-Molecule Localization Microscopy Analysis Using Lookup Tables*:
+* Fig 1: [link to download](https://filebox.fhooecloud.at/index.php/s/c9Xe85ybzMrLBdM)
+* Fig 2: [link to download](https://filebox.fhooecloud.at/index.php/s/6EyQ4tnWM2qZdHe)
+* Fig 3: [link to download](https://filebox.fhooecloud.at/index.php/s/fKwtgFXaxcf8jpp)
 
 # Tested prerequisites for compilation
 * Windows 10
