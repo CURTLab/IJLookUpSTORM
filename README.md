@@ -9,7 +9,7 @@ Pre-Pelease Image 1.x Plugin for Windows [link to download](https://filebox.fhoo
 
 # Data
 Experimental data for the unpublished paper *Real-Time 3D Single-Molecule Localization Microscopy Analysis Using Lookup Tables*:
-* Fig 1: [link to download](https://filebox.fhooecloud.at/index.php/s/c9Xe85ybzMrLBdM)
+* Fig 1: [link to download](https://filebox.fhooecloud.at/index.php/s/tKZ8n9GaKtSGW3N)
 * Fig 2: [link to download](https://filebox.fhooecloud.at/index.php/s/6EyQ4tnWM2qZdHe)
 * Fig 3: [link to download](https://filebox.fhooecloud.at/index.php/s/fKwtgFXaxcf8jpp)
 
