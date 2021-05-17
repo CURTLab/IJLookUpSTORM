@@ -15,9 +15,9 @@ The plugin can be access from ImageJ within the menu `Plugins -> LookUpSTORM -> 
 
 # Data
 Experimental data for the unpublished paper `Real-Time 3D Single-Molecule Localization Microscopy Analysis Using Lookup Tables`:
-* Fig 1: [link to download](https://filebox.fhooecloud.at/index.php/s/fKwtgFXaxcf8jpp) [details](https://github.com/CURTLab/IJLookUpSTORM/wiki/DetailsFig1)
-* Fig 2: [link to download](https://filebox.fhooecloud.at/index.php/s/6EyQ4tnWM2qZdHe) [details](https://github.com/CURTLab/IJLookUpSTORM/wiki/DetailsFig2)
-* Fig 3: [link to download](https://filebox.fhooecloud.at/index.php/s/tKZ8n9GaKtSGW3N) [details](https://github.com/CURTLab/IJLookUpSTORM/wiki/DetailsFig3)
+* Fig 1: [link to download](https://filebox.fhooecloud.at/index.php/s/fKwtgFXaxcf8jpp) (see [details](https://github.com/CURTLab/IJLookUpSTORM/wiki/DetailsFig1))
+* Fig 2: [link to download](https://filebox.fhooecloud.at/index.php/s/6EyQ4tnWM2qZdHe) (see [details](https://github.com/CURTLab/IJLookUpSTORM/wiki/DetailsFig2))
+* Fig 3: [link to download](https://filebox.fhooecloud.at/index.php/s/tKZ8n9GaKtSGW3N) (see [details](https://github.com/CURTLab/IJLookUpSTORM/wiki/DetailsFig3))
 
 # Tested prerequisites for compilation
 * Windows 10
