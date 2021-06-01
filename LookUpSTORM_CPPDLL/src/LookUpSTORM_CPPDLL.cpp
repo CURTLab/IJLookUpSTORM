@@ -348,7 +348,7 @@ JNIEXPORT jint JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getRenderImageHeight
 JNIEXPORT jstring JNICALL Java_at_fhlinz_imagej_LookUpSTORM_getVersion
 (JNIEnv* env, jobject)
 {
-	return env->NewStringUTF("0.1");
+	return env->NewStringUTF(VERSION_STR);
 }
 
 typedef struct _JNI_POSREC {

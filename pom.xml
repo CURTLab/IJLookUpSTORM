@@ -11,83 +11,111 @@
 		<version>14.0.0</version>
 		<relativePath />
 	</parent>
+        
+        <build>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>single</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <mainClass>at.fhlinz.imagej.LookUpSTORM</mainClass>
+                            </manifest>
+                        </archive>
+                        <minimizeJar>true</minimizeJar>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </build>
 
 	<groupId>at.fhlinz</groupId>
 	<artifactId>LookUpSTORM_</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.1.1</version>
 
 	<name>LookUpSTORM</name>
 	<description>A Maven project implementing an ImageJ 1.x plugin.</description>
 	<url>https://github.com/CURTLab/IJLookUpSTORM</url>
 	<inceptionYear>2021</inceptionYear>
 	<organization>
-		<name>University of Applied Sciences Upper Austria, Linz, Austra</name>
-		<url>https://www.fh-ooe.at/campus-linz/</url>
+            <name>University of Applied Sciences Upper Austria, Linz, Austra</name>
+            <url>https://www.fh-ooe.at/campus-linz/</url>
 	</organization>
 	<licenses>
-		<license>
-			<name>Simplified BSD License</name>
-			<distribution>repo</distribution>
-		</license>
+            <license>
+                <name>Simplified BSD License</name>
+                <distribution>repo</distribution>
+            </license>
 	</licenses>
 
 	<developers>
-		<developer>
-			<id>fh</id>
-			<name>Fabian Hauser</name>
-			<roles>
-				<role>lead</role>
-				<role>developer</role>
-				<role>debugger</role>
-				<role>reviewer</role>
-				<role>support</role>
-				<role>maintainer</role>
-			</roles>
-		</developer>
+            <developer>
+                <id>fh</id>
+                <name>Fabian Hauser</name>
+                <roles>
+                    <role>lead</role>
+                    <role>developer</role>
+                    <role>debugger</role>
+                    <role>reviewer</role>
+                    <role>support</role>
+                    <role>maintainer</role>
+                </roles>
+            </developer>
 	</developers>
 	<contributors>
             <contributor>
-                    <name>Jaroslaw Jacak</name>
-                    <properties><id>jj</id></properties>
+                <name>Jaroslaw Jacak</name>
+                <properties><id>jj</id></properties>
             </contributor>
 	</contributors>
 
 	<mailingLists>
-		<mailingList>
-			<name>Image.sc Forum</name>
-			<archive>https://forum.image.sc/tags/imagej</archive>
-		</mailingList>
+            <mailingList>
+                <name>Image.sc Forum</name>
+                <archive>https://forum.image.sc/tags/imagej</archive>
+            </mailingList>
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:git://github.com/CURTLab/IJLookUpSTORM</connection>
-		<developerConnection>scm:git:git@github.com:CURTLab/IJLookUpSTORM</developerConnection>
-		<tag>HEAD</tag>
-		<url>https://github.com/CURTLab/IJLookUpSTORM</url>
+            <connection>scm:git:git://github.com/CURTLab/IJLookUpSTORM</connection>
+            <developerConnection>scm:git:git@github.com:CURTLab/IJLookUpSTORM</developerConnection>
+            <tag>HEAD</tag>
+            <url>https://github.com/CURTLab/IJLookUpSTORM</url>
 	</scm>
 	<issueManagement>
-		<system>GitHub Issues</system>
-		<url>https://github.com/CURTLab/IJLookUpSTORM/issues</url>
+            <system>GitHub Issues</system>
+            <url>https://github.com/CURTLab/IJLookUpSTORM/issues</url>
 	</issueManagement>
 	<ciManagement>
-		<system>None</system>
+            <system>None</system>
 	</ciManagement>
 
 	<properties>
-		<package-name>at.fhlinz.imagej</package-name>
-		<main-class>at.fhlinz.imagej.LookUpSTORM_</main-class>
-		<license.licenseName>bsd_2</license.licenseName>
-		<license.copyrightOwners>University of Applied Sciences Upper Austria, Linz, Austra</license.copyrightOwners>
+            <package-name>at.fhlinz.imagej</package-name>
+            <main-class>at.fhlinz.imagej.LookUpSTORM_</main-class>
+            <license.licenseName>bsd_2</license.licenseName>
+            <license.copyrightOwners>University of Applied Sciences Upper Austria, Linz, Austra</license.copyrightOwners>
 	</properties>
 
 	<dependencies>
-		<dependency>
-			<groupId>net.imagej</groupId>
-			<artifactId>ij</artifactId>
-		</dependency>
-                <dependency>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-math3</artifactId>
-                </dependency>
+            <dependency>
+                <groupId>net.imagej</groupId>
+                <artifactId>ij</artifactId>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-math3</artifactId>
+            </dependency>
 	</dependencies>
 </project>
