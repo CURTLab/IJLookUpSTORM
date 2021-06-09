@@ -27,16 +27,9 @@
  *
  ****************************************************************************/
 
-package at.fhlinz.imagej;
+package at.fhlinz.imagej.calibration;
 
-import ij.gui.Plot;
-import ij.gui.PlotWindow;
-import java.awt.Color;
-import java.io.File;
-import java.io.FileInputStream;
 import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
@@ -45,12 +38,6 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.univariate.BrentOptimizer;
-import org.apache.commons.math3.optim.univariate.SearchInterval;
-import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
-import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
 
 /**
  * Calibration class to handle astigmatism single molecule localization 
@@ -71,8 +58,7 @@ import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
  * 
  * @author Fabian Hauser
  */
-public class Calibration {
-    private final HashMap<String, Double> _parameters;
+public class BSplineCalibration implements Calibration {
     private double _pixelSizeUM;
     private double _theta;
     private PolynomialSplineFunction _wxSpline;
@@ -86,129 +72,77 @@ public class Calibration {
     /**
      * Constructor
      */
-    public Calibration() {
-        _parameters = new HashMap<String, Double>();
+    public BSplineCalibration() {
         _pixelSizeUM = 1.0;
         _theta = 0.0;
         _wxSpline = null;
         _wySpline = null;
     }
-            
-    /**
-     * Load a calibration yaml file. Supported are cubic bspline representation 
-     * (at.calibration.bspline)
-     * Needed parameters are 'pixelSize' in nm and 'angle'/'theta'
-     * @param fileName YAML file with parameter
-     * @return returns true if the YAML file could be loaded
-     */
-    public boolean load(String fileName)
-    {
-        try {
-            File file = new File(fileName);   
-            FileInputStream stream = new FileInputStream(file);
-            byte [] bytes = new byte[(int)file.length()];
-            if (stream.read(bytes) != file.length())
-                return false;
-            String data = new String(bytes, "UTF8");
-            
-            Matcher matcher = Pattern.compile("!!([\\w\\.]+)\\s*").matcher(data);
-            if (!matcher.find())
-                return false;
-            
-            String typeString = matcher.group(1);
-            if (!typeString.equals("at.calibration.bspline")) {
-                System.err.printf("LookUpSTORM: Calibration: Unknown type '%s'!\n", typeString);
-                return false;
-            }
-            
-            _parameters.clear();
-            
-            // parse parameters
-            Pattern p = Pattern.compile("(\\w*):\\s*([\\-]*[0-9+][.\\w]*[-\\w]*)");
-            matcher = p.matcher(data.substring(matcher.end()));
-            while (matcher.find()) {
-                _parameters.put(matcher.group(1), Double.parseDouble(matcher.group(2)));
-            }
-            if (_parameters.isEmpty())
-                return false;
-            
-            // find important parameters
-            if (_parameters.containsKey("pixelSize"))
-                _pixelSizeUM = _parameters.get("pixelSize") / 1000;
-            
-            if (_parameters.containsKey("theta"))
-                _theta = _parameters.get("theta");
-            else if (_parameters.containsKey("angle"))
-                _theta = _parameters.get("angle");
-            
-            generateSplines();
-            
-            // determine focal plane
-            if (_parameters.containsKey("focalPlane"))
-                _focusPlane = _parameters.get("focalPlane");
-            else
-                _focusPlane = calculateFocalPlane();
-            
-            return true;
-        } catch(Exception e) {
-            return false;
-        }
+
+    @Override
+    public String name() {
+        return "BSpine Calibration";
     }
-    
+
+    @Override
+    public boolean parse(HashMap<String, Double> parameters) {
+        // find important parameters
+        if (parameters.containsKey("pixelSize"))
+            _pixelSizeUM = parameters.get("pixelSize") / 1000;
+
+        if (parameters.containsKey("theta"))
+            _theta = parameters.get("theta");
+        else if (parameters.containsKey("angle"))
+            _theta = parameters.get("angle");
+
+        generateSplines(parameters);
+
+        // determine focal plane
+        if (parameters.containsKey("focalPlane"))
+            _focusPlane = parameters.get("focalPlane");
+        else
+            _focusPlane = CalibrationFactory.calculateFocalPlane(this, _minZ, _maxZ);
+        
+        return true;
+    }
+
     /**
      * @return the focus plane in nm (axial position)
      */
+    @Override
     public double getFocusPlane() {
         return _focusPlane;
     }
-    
-    /**
-     * @return get axial range in nm
-     */
-    public double getAxialRange() {
-        return (_maxZ - _minZ);
-    }
-    
-    /**
-     * @return the minimum of the z position in nm
-     */
-    public double getMinZ() {
-        return (_maxZ - _minZ);
-    }
-    
-    /**
-     * @return the maximum of the z position in nm
-     */
-    public double getMaxZ() {
-        return (_maxZ - _minZ);
-    }
-    
+
     /**
      * @return the rotation theta in radians of the 2D elliptical Gaussian 
      * function
      */
+    @Override
     public double getTheta() {
         return _theta;
     }
-    
+
     /**
      * @param z axial position in nm
      * @return a double array containing sigmaX & sigmaY in pixels from the 
      * provided axial position (in nm)
      */
+    @Override
     public double[] value(double z) {
         return new double[] {
             _wxSpline.value(z),
             _wySpline.value(z)
         };
     }
-    
+
     /**
      * Returns an array with the values (sigmaX, sigmaY) and their derivative
      * in an array
      * @param z axial position in nm
      * @return array of [sigmaX,sigmaY,dSigmaY, dSigmaY]
      */
+    @Override
     public double[] valDer(double z) {
         return new double[] {
             _wxSpline.value(z),
@@ -217,39 +151,12 @@ public class Calibration {
             _dwy.value(z)
         };
     }
-    
-    /**
-     * Show the sigmaX & sigmaY curves of the loaded calibration
-     */
-    public void plot() {
-        int n = 100;
-        double[] wx = new double[n];
-        double[] wy = new double[n];
-        double[] x = new double[n];
-        for (int i = 0; i < n; i++) {
-            final Double z = _minZ + i * (_maxZ-_minZ) / (n-1);
-            x[i] = z;
-            wx[i] = _wxSpline.value(z);
-            wy[i] = _wySpline.value(z);
-        }
-        Plot p = new Plot("Calibration", "z position / nm", "width / pixels");
-        p.setLineWidth(1);
 
-        p.setColor(new Color(255, 0, 0));
-        p.addPoints(x, wx, PlotWindow.LINE);
-
-        p.setColor(new Color(0, 0, 255));
-        p.addPoints(x, wy, PlotWindow.LINE);
-
-        p.addLegend("SigmaX\nSigmaY");
-        p.show();
-    }
-    
     /** 
-     * Calculate cubic bspline polynomials from array values
+     * Calculate cubic b-spline polynomials from array values
      * @param x x-values
      * @param y y-values
-     * @return PolynomialSplineFunction containing the bspline polynomials
+     * @return PolynomialSplineFunction containing the b-spline polynomials
      */
     private PolynomialSplineFunction generateSpline(double[] x, double[] y) {
         final int N = x.length;
@@ -285,18 +192,18 @@ public class Calibration {
         return new PolynomialSplineFunction(x, polynomials);
     }
     
-    private void generateSplines() {
+    private void generateSplines(HashMap<String, Double> parameters) {
         int knots = 0;
-        while(_parameters.containsKey("knot"+knots+"x")) {
+        while(parameters.containsKey("knot"+knots+"x")) {
             knots++;
         }
         double[] xKnots = new double[knots];
         double[] yKnots = new double[knots];
         double[] zKnots = new double[knots];
         for (int i = 0; i < knots; ++i) {
-            xKnots[i] = _parameters.get("knot"+i+"x") / _pixelSizeUM;
-            yKnots[i] = _parameters.get("knot"+i+"y") / _pixelSizeUM;
-            zKnots[i] = _parameters.get("knot"+i+"z");
+            xKnots[i] = parameters.get("knot"+i+"x") / _pixelSizeUM;
+            yKnots[i] = parameters.get("knot"+i+"y") / _pixelSizeUM;
+            zKnots[i] = parameters.get("knot"+i+"z");
         }
         
         _minZ = zKnots[0];
@@ -309,33 +216,4 @@ public class Calibration {
         _dwy = _wySpline.derivative();
     }
     
-    private class FocusFunction implements UnivariateFunction {
-        private final Calibration _cali;
-        
-        public FocusFunction(Calibration cali)
-        {
-            _cali = cali;
-        }
-        
-        @Override
-        public double value(double d) {
-            double[] v = _cali.value(d);
-            return Math.abs(v[0] - v[1]);
-        }
-    };
-    
-    private double calculateFocalPlane() {
-        final double relativeTolerance = 1.49e-08;
-        final double absoluteTolerance = 1.49e-08;
-        FocusFunction fn = new FocusFunction(this);
-        final BrentOptimizer optimizer = new BrentOptimizer(relativeTolerance, absoluteTolerance);
-        UnivariatePointValuePair p = optimizer.optimize(
-                new UnivariateObjectiveFunction(fn), 
-                new SearchInterval(_minZ, _maxZ, (_maxZ-_minZ)/2), 
-                new MaxEval(100),
-                GoalType.MINIMIZE);
-        return p.getPoint();
-    }
-    
 }
-

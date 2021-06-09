@@ -27,7 +27,7 @@
                     <configuration>
                         <archive>
                             <manifest>
-                                <mainClass>at.fhlinz.imagej.LookUpSTORM</mainClass>
+                                <mainClass>at.fhlinz.imagej.LookUpSTORM_</mainClass>
                             </manifest>
                         </archive>
                         <minimizeJar>true</minimizeJar>
@@ -53,7 +53,7 @@
 	</organization>
 	<licenses>
             <license>
-                <name>Simplified BSD License</name>
+                <name>MIT License</name>
                 <distribution>repo</distribution>
             </license>
 	</licenses>
@@ -103,7 +103,7 @@
 	<properties>
             <package-name>at.fhlinz.imagej</package-name>
             <main-class>at.fhlinz.imagej.LookUpSTORM_</main-class>
-            <license.licenseName>bsd_2</license.licenseName>
+            <license.licenseName>MIT</license.licenseName>
             <license.copyrightOwners>University of Applied Sciences Upper Austria, Linz, Austra</license.copyrightOwners>
 	</properties>
 

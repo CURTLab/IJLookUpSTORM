@@ -29,6 +29,7 @@
 
 package at.fhlinz.imagej;
 
+import at.fhlinz.imagej.calibration.Calibration;
 import ij.IJ;
 
 /**

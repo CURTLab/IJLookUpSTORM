@@ -29,14 +29,19 @@
 
 package at.fhlinz.imagej;
 
+import at.fhlinz.imagej.calibration.Calibration;
+import at.fhlinz.imagej.calibration.CalibrationFactory;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.WindowManager;
+import ij.gui.Plot;
+import ij.gui.PlotWindow;
 import ij.io.FileSaver;
 import ij.measure.ResultsTable;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -358,8 +363,11 @@ public class DialogLookUpSTORM extends JFrame {
             _comboSource.setSelectedIndex(0);
         else if (fileName.toLowerCase().endsWith(".lut"))
             _comboSource.setSelectedIndex(1);
-        if (checkLUTData(fileName))
-            _fileNameField.setText(fileName);
+        try {
+            if (checkLUTData(fileName))
+                _fileNameField.setText(fileName);
+        } catch(IllegalArgumentException e) {
+        }
     }
     
     /**
@@ -441,12 +449,15 @@ public class DialogLookUpSTORM extends JFrame {
         if (ret == JFileChooser.APPROVE_OPTION) 
         {
             final String fileName = f.getSelectedFile().toString();
-            if (checkLUTData(fileName)) { 
-                _fileNameField.setText(fileName);
-            } else {
+            try {
+                checkLUTData(fileName);
+            } catch (IllegalArgumentException e) {
                 JOptionPane.showMessageDialog(this, 
-                        "Check for file " + fileName + " failed!", "Error LookUpSTORM", 
+                        "Check for file " + fileName + " failed!\nReason: " + 
+                                e.getMessage(), "Error LookUpSTORM", 
                         JOptionPane.ERROR_MESSAGE);
+            } finally {
+                _fileNameField.setText(fileName);
             }
         }
     }
@@ -707,15 +718,48 @@ public class DialogLookUpSTORM extends JFrame {
         _spinnerMaxIter.setEnabled(true);
     }
     
+    /**
+     * Show the sigmaX & sigmaY curves of the loaded calibration
+     */
+    private void plotCalibration() {
+        final int n = 100;
+        double[] wx = new double[n];
+        double[] wy = new double[n];
+        double[] x = new double[n];
+        final double minZ = _cali.getFocusPlane() - 500;
+        final double maxZ = _cali.getFocusPlane() + 500;
+        for (int i = 0; i < n; i++) {
+            final Double z = minZ + i * (maxZ-minZ) / (n-1);
+            x[i] = z;
+            double sigma[] = _cali.value(z);
+            wx[i] = sigma[0];
+            wy[i] = sigma[1];
+        }
+        Plot p = new Plot("Calibration", "z position / nm", "width / pixels");
+        p.setLineWidth(1);
+
+        p.setColor(new Color(255, 0, 0));
+        p.addPoints(x, wx, PlotWindow.LINE);
+
+        p.setColor(new Color(0, 0, 255));
+        p.addPoints(x, wy, PlotWindow.LINE);
+
+        p.addLegend("SigmaX\nSigmaY");
+        p.show();
+    }
+    
     private boolean checkLUTData(String fileName) {
         final int index = _comboSource.getSelectedIndex();
         if (index == 0) {
-            _cali = new Calibration();
-            if (_cali.load(fileName)) {
-                _cali.plot();
+            CalibrationFactory factory = new CalibrationFactory();
+            _cali = factory.load(fileName);
+            if (_cali != null) {
+                plotCalibration();
                 _buttonGenerate.setEnabled(true);
                 updateRAMUsage();
                 return true;
+            } else {
+                throw new IllegalArgumentException("Calibration could not be loaded!");
             }
         } else if (index == 1) {
             BinaryLUT lut = new BinaryLUT();
@@ -728,6 +772,8 @@ public class DialogLookUpSTORM extends JFrame {
                 _buttonGenerate.setEnabled(true);
                 updateRAMUsage();
                 return true;
+            } else {
+                throw new IllegalArgumentException("Binary LUT could not be loaded!");
             }
         } 
         return false;
