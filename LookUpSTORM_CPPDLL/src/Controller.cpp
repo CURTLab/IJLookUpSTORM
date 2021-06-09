@@ -488,18 +488,20 @@ bool Controller::calculateCRLB(const Molecule& mol, double* crlb, const double a
     const double photons = mol.peak * photonFactor;
 
     // helper function for the derivative of the LUT model at (b, I, x, y, z)
-    auto der = [psf, pixels, photons, pixelSize](size_t i, size_t k) {
+    // parameters: i-th pixel index and p-th parameter index
+    auto der = [psf, pixels, photons, pixelSize](size_t p, size_t i) {
         double scale = 1.0;
-        if ((i == 2) || (i == 3)) scale = photons / pixelSize;
-        else if (i == 4) scale = photons;
+        if (p == 0) return 1.0;
+        else if ((p == 2) || (p == 3)) scale = photons / pixelSize;
+        else if (p == 4) scale = photons;
         //if (i > 1) scale = photons / pixelSize;
-        return i == 0 ? 1.0 : psf[4 * k + (i - 1)] * scale;
+        return psf[4 * i + (p - 1)] * scale;
     };
 
     Matrix fisher(5, 5, 0.0);
     for (size_t i = 0; i < pixels; ++i) {
         // intensity of the molecule at the pixel k 
-        const double I = photonFactor * (mol.peak * psf[i] + mol.background) - offset * photonFactor;
+        const double I = photonFactor * (mol.peak * psf[4 * i] + mol.background) - offset * photonFactor;
         for (size_t j = 0; j < 5; ++j) {
             for (size_t k = 0; k < 5; ++k) {
                 fisher(j, k) += der(j, i) * der(k, i) / I;
