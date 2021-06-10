@@ -4,6 +4,8 @@ LookUpSTORM is a 3D real-time single molecule localization microscopy (SMLM) fit
 
 This is an example implementation for ImageJ 1.x.
 
+![Thumbnail](https://github.com/CURTLab/IJLookUpSTORM/blob/master/thumbnail_lookupstorm.png)
+
 # Pre-Release
 Pre-Release ImageJ Plugin Version 0.1.1 for ImageJ 1.x (Windows x64 including dependencies) 
 [link to download](https://filebox.fhooecloud.at/index.php/s/3XE3z8g2n5Gynff)
