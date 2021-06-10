@@ -223,4 +223,4 @@ constexpr const size_t LUT::dataSize() const
 
 } // namespace LookUpSTORM
 
-#endif LUT_H
+#endif // LUT_H

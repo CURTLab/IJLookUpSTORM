@@ -174,7 +174,7 @@ void Matrix::setZero() noexcept
     if (!d)
         return;
     if (d->tda == d->size2)
-        memset(d->data, 0, d->size() * sizeof(double));
+        std::fill_n(d->data, d->size(), 0.0);
     else
         d->setElements([](size_t, size_t) { return 0.0; });
 }

@@ -9,7 +9,7 @@
 
 cmake_minimum_required (VERSION 3.9)
 
-project (LookUpSTORM_CPPDLL VERSION 0.1 DESCRIPTION "Real-Time LookUp STORM Analysis")
+project (LookUpSTORM_CPPDLL DESCRIPTION "Real-Time LookUp STORM Analysis")
 
 set(SOURCE_FILES 
     LookUpSTORM_CPPDLL/src/Calibration.cpp
@@ -45,6 +45,9 @@ option(JNI_EXPORT "Export Symbols for JNI" False)
 option(USE_AVX_INTRINSICS "Use AVX" False)
 
 set(CMAKE_DEBUG_POSTFIX d)
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -O3 -fPIC")
+set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -O3 -fPIC")
+# set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
 if (MSVC)
 	add_definitions(-D_USE_MATH_DEFINES -DNOMINMAX)
@@ -86,7 +89,9 @@ endif(JNI_EXPORT)
 
 add_library(LookUpSTORM_CPPDLL SHARED ${SOURCE_FILES})
 
-set_target_properties(LookUpSTORM_CPPDLL PROPERTIES VERSION ${PROJECT_VERSION})	
+set_target_properties(LookUpSTORM_CPPDLL PROPERTIES
+ NO_SONAME ON
+)	
 
 target_include_directories(LookUpSTORM_CPPDLL PRIVATE LookUpSTORM_CPPDLL/src)
 target_include_directories(LookUpSTORM_CPPDLL PUBLIC LookUpSTORM_CPPDLL/include)

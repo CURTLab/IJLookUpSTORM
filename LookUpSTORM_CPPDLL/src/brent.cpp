@@ -1028,7 +1028,11 @@ void timestamp ( )
   time_t now;
 
   now = time ( nullptr );
+#if _MSC_VER
   localtime_s ( &tm, &now );
+#else
+  localtime_r ( &now, &tm );
+#endif
 
   strftime ( time_buffer, TIME_SIZE, "%d %B %Y %I:%M:%S %p", &tm );
 

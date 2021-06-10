@@ -34,6 +34,7 @@
 #include "Controller.h"
 
 #include <fstream>
+#include <cstring>
 
 using namespace LookUpSTORM;
 

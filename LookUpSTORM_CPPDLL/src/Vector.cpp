@@ -141,7 +141,7 @@ void Vector::fill(double value) noexcept
 void Vector::setZero() noexcept
 {
     if (d)
-        memset(d->data, 0, d->size * sizeof(double));
+        std::fill(d->data, d->data + d->size, 0.0);
 }
 
 double Vector::sum() const

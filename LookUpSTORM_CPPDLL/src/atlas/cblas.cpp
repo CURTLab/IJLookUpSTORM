@@ -8,6 +8,8 @@ extern "C" {
 
 }
 
+#include <cstddef>
+
 void cblas_dsyrk(const enum CBLAS_ORDER Order, const enum CBLAS_UPLO Uplo,
     const enum CBLAS_TRANSPOSE Trans, const int N, const int K,
     const double alpha, const double* A, const int lda,

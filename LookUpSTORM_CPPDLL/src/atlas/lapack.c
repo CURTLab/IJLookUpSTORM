@@ -1,4 +1,7 @@
 #include <float.h>
+#include <stddef.h>
+#include <stdlib.h>
+
 #include "cblas.h"
 #include "atlas_reflevel2.h"
 #include "atlas_lapack.h"

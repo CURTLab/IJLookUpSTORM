@@ -44,7 +44,7 @@ inline constexpr uint32_t boundRGB(double red, double green, double blue)
     const int r = bound<int>(red * 255, 0, 255);
     const int g = bound<int>(green * 255, 0, 255);
     const int b = bound<int>(blue * 255, 0, 255);
-    return 0xff000000u | ((r & 0xffu) << 16) | ((g & 0xffu) << 8) | (b & 0xffu);
+    return (0xff000000u | ((r & 0xffu) << 16) | ((g & 0xffu) << 8) | (b & 0xffu));
 }
 
 ColorMap::ColorMap()

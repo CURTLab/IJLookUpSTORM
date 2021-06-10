@@ -263,7 +263,7 @@ bool Calibration::generateSpline()
 std::pair<double, double> Calibration::value(double z) const
 {
     std::pair<double, double> ret{ 0.0, 0.0 };
-    const size_t i = std::min(std::max(0ull, static_cast<size_t>(std::floor((z - d->knots[0].z) / d->h))), d->knots.size() - 2);
+    const size_t i = std::min(std::max(std::size_t(0), static_cast<std::size_t>(std::floor((z - d->knots[0].z) / d->h))), d->knots.size() - 2);
     const double dx = (z - d->knots[i].z);
     for (size_t term = 0; term < 4; ++term) {
         ret.first = ret.first * dx + d->coeffs[0](i, term);
@@ -275,7 +275,7 @@ std::pair<double, double> Calibration::value(double z) const
 std::pair<double, double> Calibration::dvalue(double z) const
 {
     std::pair<double, double> ret{ 0.0, 0.0 };
-    const size_t i = std::min(std::max(0ull, static_cast<size_t>(std::floor((z - d->knots[0].z) / d->h))), d->knots.size() - 2);
+    const size_t i = std::min(std::max(std::size_t(0), static_cast<std::size_t>(std::floor((z - d->knots[0].z) / d->h))), d->knots.size() - 2);
     const double dx = (z - d->knots[i].z);
     for (size_t term = 0; term < 3; ++term) {
         ret.first = ret.first * dx + (3 - term) * d->coeffs[0](i, term);
@@ -287,7 +287,7 @@ std::pair<double, double> Calibration::dvalue(double z) const
 std::tuple<double, double, double, double> Calibration::valDer(double z) const
 {
     std::tuple<double, double, double, double> ret{ 0.0, 0.0, 0.0, 0.0 };
-    const size_t i = std::min(std::max(0ull, static_cast<size_t>(std::floor((z - d->knots[0].z) / d->h))), d->knots.size() - 2);
+    const size_t i = std::min(std::max(std::size_t(0), static_cast<std::size_t>(std::floor((z - d->knots[0].z) / d->h))), d->knots.size() - 2);
     const double dx = (z - d->knots[i].z);
     for (size_t term = 0; term < 3; ++term) {
         std::get<0>(ret) = std::get<0>(ret) * dx + d->coeffs[0](i, term);
