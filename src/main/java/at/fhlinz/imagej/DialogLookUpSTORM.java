@@ -169,13 +169,13 @@ public class DialogLookUpSTORM extends JFrame {
             panelLUT.add(_spinnerLatRange);
             _spinnerLatRange.addChangeListener(listener);
 
-            panelLUT.add(label("Axial Delta:"));
+            panelLUT.add(label("Axial Delta (nm):"));
             _spinnerAxDelta = new JSpinner();
             _spinnerAxDelta.setModel(new SpinnerNumberModel(25.0d, 1.0d, 500.0d, 10.0d));
             panelLUT.add(_spinnerAxDelta);
             _spinnerAxDelta.addChangeListener(listener);
 
-            panelLUT.add(label("Axial Range:"));
+            panelLUT.add(label("Axial Range (nm):"));
             _spinnerAxRange = new JSpinner();
             _spinnerAxRange.setModel(new SpinnerNumberModel(1000.0d, 0.0d, 50000.d, 100.d));
             panelLUT.add(_spinnerAxRange);

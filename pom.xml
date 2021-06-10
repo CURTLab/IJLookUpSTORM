@@ -41,7 +41,7 @@
 
 	<groupId>at.fhlinz</groupId>
 	<artifactId>LookUpSTORM_</artifactId>
-	<version>0.1.1</version>
+	<version>0.1.2</version>
 
 	<name>LookUpSTORM</name>
 	<description>A Maven project implementing an ImageJ 1.x plugin.</description>

@@ -42,7 +42,7 @@
 #define DLL_DEF_LUT
 #endif // DLL_EXPORT
 
-#define VERSION_STR "0.1.1"
+#define VERSION_STR "0.1.2"
 
 namespace LookUpSTORM
 {
