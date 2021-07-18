@@ -21,10 +21,13 @@ The plugin can be access from ImageJ within the menu `Plugins -> LookUpSTORM -> 
 LookUpSTORM support the usage of calibration files (YAML) created with [ThunderSTORM](https://github.com/zitmen/thunderstorm). See [wiki](https://github.com/CURTLab/IJLookUpSTORM/wiki/CreateCalibrationFile) for details.
 
 # Data
-Experimental data for the unpublished paper `Real-Time 3D Single-Molecule Localization Microscopy Analysis Using Lookup Tables`:
+Experimental data for the published paper `Real-Time 3D Single-Molecule Localization Microscopy Analysis Using Lookup Tables`:
 * Fig 1: [link to download](https://filebox.fhooecloud.at/index.php/s/fKwtgFXaxcf8jpp) (see [details](https://github.com/CURTLab/IJLookUpSTORM/wiki/DetailsFig1))
 * Fig 2: [link to download](https://filebox.fhooecloud.at/index.php/s/6EyQ4tnWM2qZdHe) (see [details](https://github.com/CURTLab/IJLookUpSTORM/wiki/DetailsFig2))
 * Fig 3: [link to download](https://filebox.fhooecloud.at/index.php/s/tKZ8n9GaKtSGW3N) (see [details](https://github.com/CURTLab/IJLookUpSTORM/wiki/DetailsFig3))
+
+# Citation
+Please cite our paper [Real-Time 3D Single-Molecule Localization Microscopy Analysis Using Lookup Tables](https://www.osapublishing.org/boe/fulltext.cfm?uri=boe-12-8-4955&id=453384#articleFigures), Vol. 12, Issue 8, pp. 4955-4968 (2021) (DOI: [https://doi.org/10.1364/BOE.424016](https://doi.org/10.1364/BOE.424016))
 
 # Building Library
 Library for c++/java can be build using the CMake build system. It is recommended to use the CMake GUI. 
