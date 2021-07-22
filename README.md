@@ -27,7 +27,7 @@ Experimental data for the published paper `Real-Time 3D Single-Molecule Localiza
 * Fig 3: [link to download](https://filebox.fhooecloud.at/index.php/s/tKZ8n9GaKtSGW3N) (see [details](https://github.com/CURTLab/IJLookUpSTORM/wiki/DetailsFig3))
 
 # Citation
-Please cite our paper [Real-Time 3D Single-Molecule Localization Microscopy Analysis Using Lookup Tables](https://www.osapublishing.org/boe/fulltext.cfm?uri=boe-12-8-4955&id=453384#articleFigures), Vol. 12, Issue 8, pp. 4955-4968 (2021) (DOI: [https://doi.org/10.1364/BOE.424016](https://doi.org/10.1364/BOE.424016))
+Please cite our paper [Real-Time 3D Single-Molecule Localization Microscopy Analysis Using Lookup Tables](https://www.osapublishing.org/boe/fulltext.cfm?uri=boe-12-8-4955&id=453384), Vol. 12, Issue 8, pp. 4955-4968 (2021) (DOI: [10.1364/BOE.424016](https://doi.org/10.1364/BOE.424016))
 
 # Building Library
 Library for c++/java can be build using the CMake build system. It is recommended to use the CMake GUI. 
