@@ -27,74 +27,39 @@
  *
  ****************************************************************************/
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef AUTOTHRESHOLD_H
+#define AUTOTHRESHOLD_H
 
-#include <iostream>
-#include <cmath>
-#include <algorithm>
+#include <list>
 
-#if !defined(JNI_EXPORT_LUT) && defined(DLL_EXPORT_LUT)
-#define DLL_DEF_LUT __declspec(dllexport)
-#elif !defined(JNI_EXPORT_LUT) && defined(DLL_IMPORT_LUT) 
-#define DLL_DEF_LUT __declspec(dllimport)
-#else
-#define DLL_DEF_LUT
-#endif // DLL_EXPORT
-
-#define VERSION_STR "0.1.3"
+#include "Common.h"
 
 namespace LookUpSTORM
 {
 
-template<typename T>
-static inline T constexpr sqr(const T& x) { return x * x; }
-
-template <class T>
-static inline T constexpr bound(const T& v, const T& lo, const T& hi) { return (v < lo ? lo : (v > hi ? hi: v)); }
-
-static inline bool cmp(double v1, double v2) { return std::abs(v1 - v2) * 1E12 <= std::min(std::abs(v1), std::abs(v2)); }
-
-// max intensity for EM-CCD camera in AD counts
-static constexpr uint16_t MAX_INTENSITY = 14000;
-
-// RGBA 8888 back color
-static constexpr uint32_t BLACK = 0xff000000;
-
-enum class Initialization {
-    Uninitialized
-};
-static constexpr Initialization Uninitialized = Initialization::Uninitialized;
-
-enum class Projection {
-    TopDown,
-    BottomUp,
-    SideXZ,
-    SideYZ
-};
-
-
-class Molecule
+class AutoThreshold
 {
 public:
-	inline Molecule() : data{ 0.0 } {}
+	AutoThreshold();
+	~AutoThreshold();
 
-	union {
-		struct {
-			double background;
-			double peak;
-			double x;
-			double y;
-			double z;
-			double frame;
-			double xfit;
-			double yfit;
-			double time_us;
-		};
-		double data[9];
-	};
+	bool isEnabled() const;
+	void setEnabled(bool enabled);
+
+	void addMolecule(const Molecule& mol);
+
+	double calculateThreshold() const;
+
+	void reset();
+
+private:
+	bool m_enabled;
+	double m_minIntensity;
+	double m_maxIntensity;
+	double m_hBin;
+	uint32_t m_histogram[MAX_INTENSITY];
 };
 
 } // namespace LookUpSTORM
 
-#endif // !COMMON_H
+#endif // AUTOTHRESHOLD_H

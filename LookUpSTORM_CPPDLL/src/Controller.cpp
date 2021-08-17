@@ -37,6 +37,7 @@
 #include "LocalMaximumSearch.h"
 #include "LinearMath.h"
 #include "LUT.h"
+#include "AutoThreshold.h"
 
 #undef min
 #undef max
@@ -56,6 +57,7 @@ public:
         , frameFittingTimeMS(0.0)
         , renderUpdateRate(5)
         , timeoutMS(250.0)
+        , autoThresholdUpdateRate(10)
         , enableRendering(true)
         , verbose(false)
     {
@@ -76,6 +78,8 @@ public:
     std::atomic<bool> enableRendering;
     std::atomic<double> timeoutMS;
     std::list<Molecule> mols;
+    AutoThreshold autoThreshold;
+    std::atomic<int> autoThresholdUpdateRate;
     Renderer renderer;
     std::atomic<bool> verbose;
     Calibration cali;
@@ -156,7 +160,7 @@ void Controller::release()
 }
 #endif // CONTROLLER_STATIC
 
-LookUpSTORM::Controller::~Controller()
+Controller::~Controller()
 {
     delete d;
 }
@@ -166,7 +170,7 @@ bool Controller::isReady() const
     return /*d->renderer.isReady() && */d->fitter.isReady() && (d->imageWidth > 0) && (d->imageHeight > 0);
 }
 
-bool LookUpSTORM::Controller::generate(LUT& lut, size_t windowSize, double dLat, double dAx, 
+bool Controller::generate(LUT& lut, size_t windowSize, double dLat, double dAx, 
     double rangeLat, double rangeAx, std::function<void(size_t index, size_t max)> callback)
 {
     if (!lut.generate(windowSize, dLat, dAx, rangeLat, rangeAx, callback))
@@ -182,7 +186,7 @@ bool Controller::generateFromCalibration(const Calibration& cali, size_t windowS
     return generate(lut, windowSize, dLat, dAx, rangeLat, rangeAx, callback);
 }
 
-bool LookUpSTORM::Controller::setLUT(const LUT& lut)
+bool Controller::setLUT(const LUT& lut)
 {
     if (!lut.isValid()) {
         if (d->verbose)
@@ -230,12 +234,16 @@ bool Controller::processImage(ImageU16 image, int frame)
     const uint16_t threshold = d->threshold.load();
     const double timeoutMS = d->timeoutMS.load();
 
-    auto features = d->nms.find(image, d->threshold);
+    //auto features = d->nms.find(image, d->threshold);
+    auto features = d->nms.find(image, 0);
     Molecule m;
     Rect bounds = image.rect();
     d->changedRegion = {};
     d->detectedMolecues.clear();
     //std::cout << "Features: " << features.size() << std::endl;
+
+    int failureRetries = 25;
+
     for (const auto& f : features) {
         auto t_start = std::chrono::high_resolution_clock::now();
         m.peak = std::max<double>(0.0, double(f.val) - f.localBg);
@@ -259,10 +267,10 @@ bool Controller::processImage(ImageU16 image, int frame)
 
         m.time_us = std::chrono::duration<double, std::micro>(t_end - t_start).count();
 
-        if (success) {
-            if (m.peak < threshold)
-                continue;
+        // add all fitted candiates intensities even if they failed for auto thresholding
+        d->autoThreshold.addMolecule(m);
 
+        if (success && (m.peak >= threshold)) {
             m.xfit = m.x;
             m.yfit = m.y;
 
@@ -275,6 +283,9 @@ bool Controller::processImage(ImageU16 image, int frame)
             d->detectedMolecues.push_back(m);
             d->mols.push_back(m);
         }
+        else {
+            --failureRetries;
+        }
 
         const auto t = std::chrono::high_resolution_clock::now();
         if (std::chrono::duration<double, std::milli>(t - t0).count() > timeoutMS) {
@@ -282,7 +293,11 @@ bool Controller::processImage(ImageU16 image, int frame)
                 std::cerr << "LookUpSTORM: Timeout!" << std::endl;
             return false;
         }
+
+        if (failureRetries == 0)
+            break;
     }
+
     const auto t1 = std::chrono::high_resolution_clock::now();
     
     d->frameFittingTimeMS.store(std::chrono::duration<double, std::milli>(t1 - t0).count());
@@ -315,7 +330,9 @@ bool Controller::renderToImage(ImageU32 image, int frame)
     const int updateRate = d->renderUpdateRate.load();
 
     // update SMLM image
-    if (!d->isSMLMImageReady && d->enableRendering.load() && ((updateRate <= 1) || ((d->changedRegion.area() > 25) && (frame > 1) && (frame % updateRate == 0)))) {
+    if (!d->isSMLMImageReady && d->enableRendering.load() && 
+        ((updateRate <= 1) || ((d->changedRegion.area() > 25) && (frame > 1) && (frame % updateRate == 0)))
+        ) {
 
         const auto t1 = std::chrono::high_resolution_clock::now();
 
@@ -334,6 +351,20 @@ bool Controller::renderToImage(ImageU32 image, int frame)
     return false;
 }
 
+bool Controller::updateAutoThreshold(int frame)
+{
+    const int updateRate = d->autoThresholdUpdateRate.load();
+
+    // recalculate threshold
+    if (d->autoThreshold.isEnabled() &&
+        ((updateRate <= 1) || ((frame > 1) && (frame % updateRate == 0)))
+        ) {
+        d->threshold.store(std::min<uint16_t>(std::ceil(d->autoThreshold.calculateThreshold()), MAX_INTENSITY));
+        return true;
+    }
+    return false;
+}
+
 void Controller::setThreshold(uint16_t threshold)
 {
     d->threshold.store(threshold);
@@ -344,32 +375,52 @@ uint16_t Controller::threshold() const
     return d->threshold.load();
 }
 
-void LookUpSTORM::Controller::setVerbose(bool verbose)
+bool Controller::isAutoThresholdEnabled() const
+{
+    return d->autoThreshold.isEnabled();
+}
+
+void Controller::setAutoThresholdEnabled(bool enabled)
+{
+    d->autoThreshold.setEnabled(enabled);
+}
+
+void Controller::setAutoThresholdUpdateRate(int rate)
+{
+    d->autoThresholdUpdateRate.store(rate);
+}
+
+int Controller::autoThresholdUpdateRate() const
+{
+    return d->autoThresholdUpdateRate.load();
+}
+
+void Controller::setVerbose(bool verbose)
 {
     d->verbose.store(verbose);
 }
 
-bool LookUpSTORM::Controller::isVerbose() const
+bool Controller::isVerbose() const
 {
     return d->verbose.load();
 }
 
-void LookUpSTORM::Controller::setFrameRenderUpdateRate(int rate)
+void Controller::setFrameRenderUpdateRate(int rate)
 {
     d->renderUpdateRate.store(rate);
 }
 
-int LookUpSTORM::Controller::frameRenderUpdateRate() const
+int Controller::frameRenderUpdateRate() const
 {
     return d->renderUpdateRate.load();
 }
 
-void LookUpSTORM::Controller::setTimeoutMS(double timeoutMS)
+void Controller::setTimeoutMS(double timeoutMS)
 {
     d->timeoutMS.store(timeoutMS);
 }
 
-double LookUpSTORM::Controller::timeoutMS() const
+double Controller::timeoutMS() const
 {
     return d->timeoutMS.load();
 }
@@ -394,22 +445,22 @@ Fitter& Controller::fitter()
     return d->fitter;
 }
 
-double LookUpSTORM::Controller::frameFittingTimeMS() const
+double Controller::frameFittingTimeMS() const
 {
     return d->frameFittingTimeMS.load();
 }
 
-double LookUpSTORM::Controller::renderTimeMS() const
+double Controller::renderTimeMS() const
 {
     return d->renderTimeMS.load();
 }
 
-void LookUpSTORM::Controller::setRenderingEnabled(bool enabled)
+void Controller::setRenderingEnabled(bool enabled)
 {
     d->enableRendering.store(enabled);
 }
 
-bool LookUpSTORM::Controller::isRenderingEnabled() const
+bool Controller::isRenderingEnabled() const
 {
     return d->enableRendering.load();
 }
@@ -434,7 +485,7 @@ void Controller::setRenderSize(int width, int height)
         double(height) / d->imageHeight);
 }
 
-double LookUpSTORM::Controller::calculatePhotons(const Molecule& mol, const double adu, const double gain) const
+double Controller::calculatePhotons(const Molecule& mol, const double adu, const double gain) const
 {
     if (!d->fitter.isReady()) {
         if (d->verbose)
@@ -494,7 +545,6 @@ bool Controller::calculateCRLB(const Molecule& mol, double* crlb, const double a
         if (p == 0) return 1.0;
         else if ((p == 2) || (p == 3)) scale = photons / pixelSize;
         else if (p == 4) scale = photons;
-        //if (i > 1) scale = photons / pixelSize;
         return psf[4 * i + (p - 1)] * scale;
     };
 
@@ -530,6 +580,7 @@ bool Controller::calculateCRLB(const Molecule& mol, double* crlb, const double a
 
 void Controller::reset()
 {
+    d->autoThreshold.reset();
     d->isSMLMImageReady.store(false);
     d->numberOfDetectedLocs.store(0);
     d->mols.clear();

@@ -147,6 +147,7 @@
     <ClCompile Include="src\Calibration.cpp" />
     <ClCompile Include="src\brent.cpp" />
     <ClCompile Include="src\LUT.cpp" />
+    <ClCompile Include="src\AutoThreshold.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ColorMap.h" />
@@ -197,6 +198,7 @@
     <ClInclude Include="include\Calibration.h" />
     <ClInclude Include="src\brent.hpp" />
     <ClInclude Include="include\LUT.h" />
+    <ClInclude Include="src\AutoThreshold.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ATLAS">

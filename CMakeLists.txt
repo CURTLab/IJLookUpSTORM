@@ -12,6 +12,7 @@ cmake_minimum_required (VERSION 3.9)
 project (LookUpSTORM_CPPDLL DESCRIPTION "Real-Time LookUp STORM Analysis")
 
 set(SOURCE_FILES 
+    LookUpSTORM_CPPDLL/src/AutoThreshold.cpp
     LookUpSTORM_CPPDLL/src/Calibration.cpp
     LookUpSTORM_CPPDLL/src/ColorMap.cpp
 	LookUpSTORM_CPPDLL/src/Controller.cpp

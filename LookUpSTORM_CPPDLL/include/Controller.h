@@ -83,12 +83,28 @@ public:
 	int imageWidth() const;
 	int imageHeight() const;
 
+	// thread-safe, renders the localiation imaged each nth frame (see setFrameRenderUpdateRate)
+	// and if rendering is enabled (see setRenderingEnabled, default is true)
+	// returns true if image was updated
 	bool renderToImage(ImageU32 image, int frame);
+
+	// thread-safe, updates the threshold each nth frame (see setAutoThresholdUpdateRate)
+	// and if auto threshold is enabled (see setAutoThresholdEnabled, default is false)
+	// returns true if threshold was updated
+	bool updateAutoThreshold(int frame);
 
 	// thread-safe
 	void setThreshold(uint16_t threshold);
 	// thread-safe
 	uint16_t threshold() const;
+
+	bool isAutoThresholdEnabled() const;
+	void setAutoThresholdEnabled(bool enabled);
+
+	// thread-safe
+	void setAutoThresholdUpdateRate(int rate);
+	// thread-safe
+	int autoThresholdUpdateRate() const;
 
 	// thread-safe
 	void setVerbose(bool verbose);
