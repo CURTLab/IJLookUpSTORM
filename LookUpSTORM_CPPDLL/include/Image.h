@@ -78,6 +78,9 @@ public:
 	bool pixel(size_t i, T& val) const;
 	bool pixel(int x, int y, T& val) const;
 
+	bool setPixel(size_t i, const T& val);
+	bool setPixel(int x, int y, const T& val);
+
 	size_t allocatedBytes() const;
 
 	T* data();

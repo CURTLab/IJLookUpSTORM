@@ -70,6 +70,9 @@ public:
 
 	void clear();
 
+	// histogram image
+	const ImageU32 rawImageHistogram() const;
+
 	// render a molecule list with the possiblity of different projections
 	static ImageU32 render(const std::list<Molecule>& mols, int width, int height,
 		double scaleX, double scaleY, double minZ, double maxZ, double dZ, 

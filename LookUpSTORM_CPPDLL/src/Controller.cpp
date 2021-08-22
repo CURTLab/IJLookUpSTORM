@@ -236,6 +236,7 @@ bool Controller::processImage(ImageU16 image, int frame)
 
     //auto features = d->nms.find(image, d->threshold);
     auto features = d->nms.find(image, 0);
+
     Molecule m;
     Rect bounds = image.rect();
     d->changedRegion = {};
@@ -445,9 +446,19 @@ Fitter& Controller::fitter()
     return d->fitter;
 }
 
+const Fitter& Controller::fitter() const
+{
+    return d->fitter;
+}
+
 double Controller::frameFittingTimeMS() const
 {
     return d->frameFittingTimeMS.load();
+}
+
+Milliseconds Controller::frameFittingTime() const
+{
+    return Milliseconds(d->renderTimeMS.load());
 }
 
 double Controller::renderTimeMS() const
@@ -466,6 +477,11 @@ bool Controller::isRenderingEnabled() const
 }
 
 Renderer& Controller::renderer()
+{
+    return d->renderer;
+}
+
+const Renderer& LookUpSTORM::Controller::renderer() const
 {
     return d->renderer;
 }

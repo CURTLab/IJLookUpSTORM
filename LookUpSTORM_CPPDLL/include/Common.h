@@ -33,6 +33,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <chrono>
 
 #if !defined(JNI_EXPORT_LUT) && defined(DLL_EXPORT_LUT)
 #define DLL_DEF_LUT __declspec(dllexport)
@@ -94,6 +95,11 @@ public:
 		double data[9];
 	};
 };
+
+// time
+using Microseconds = std::chrono::duration<double, std::micro>;
+using Milliseconds = std::chrono::duration<double, std::milli>;
+using Seconds = std::chrono::duration<double>;
 
 } // namespace LookUpSTORM
 

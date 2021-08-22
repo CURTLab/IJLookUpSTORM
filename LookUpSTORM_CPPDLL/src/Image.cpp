@@ -240,6 +240,29 @@ bool Image<T>::pixel(int x, int y, T& val) const
 }
 
 template<class T>
+bool Image<T>::setPixel(size_t i, const T& val)
+{
+    if (!d || (i > (size_t(d->width) * d->height)))
+        return false;
+
+    if (d->width == d->stride)
+        d->data[i] = val;
+    else
+        d->data[d->indexWithStride(i)] = val;
+
+    return true;
+}
+
+template<class T>
+bool Image<T>::setPixel(int x, int y, const T& val)
+{
+    if (!d || (x < 0) || (y < 0) || (x >= d->width) || (y >= d->height))
+        return false;
+    d->data[d->stride * y + x] = val;
+    return true;
+}
+
+template<class T>
 size_t Image<T>::allocatedBytes() const
 {
     return (d && d->owner) ? (d->bytes_pixel * d->width * d->height) : 0;

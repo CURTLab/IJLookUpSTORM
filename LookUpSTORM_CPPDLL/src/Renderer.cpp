@@ -246,8 +246,6 @@ void Renderer::set(double x, double y, double z)
         const uint32_t zi = uint32_t((z - d->minZ) / d->dZ) + 1;
         auto& pixel = d->image(dx, dy);
         pixel = std::max(zi, pixel);
-
-        //std::cout << dx << ", " << dy << ", " << pixel << std::endl;
     }
 }
 
@@ -297,6 +295,11 @@ void Renderer::clear()
 {
     d->image.fill(0);
     d->renderImage.fill(BLACK);
+}
+
+const ImageU32 Renderer::rawImageHistogram() const
+{
+    return d->image;
 }
 
 ImageU32 Renderer::render(const std::list<Molecule>& mols, int width, int height, double scaleX, 

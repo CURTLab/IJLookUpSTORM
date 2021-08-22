@@ -55,14 +55,14 @@ public:
 	bool isReady() const;
 
 	// generate LUT from an object derived from the LUT class
-	// the callback function can be used to show the progress
+	// the callback function can be used to show the progress (current index, max index)
 	bool generate(LUT& lut, size_t windowSize,
 		double dLat, double dAx, double rangeLat, double rangeAx,
 		std::function<void(size_t index, size_t max)> callback = [](size_t,size_t){}
 	);
 
 	// generate astigmatism LUT from calibration
-	// the callback function can be used to show the progress
+	// the callback function can be used to show the progress (current index, max index)
 	bool generateFromCalibration(const Calibration& cali, size_t windowSize,
 		double dLat, double dAx, double rangeLat, double rangeAx,
 		std::function<void(size_t index, size_t max)> callback = [](size_t, size_t) {}
@@ -122,6 +122,7 @@ public:
 	double timeoutMS() const;
 
 	Fitter& fitter();
+	const Fitter& fitter() const;
 	// get detected localization from the last processImage call
 	std::list<Molecule>& detectedMolecues();
 	std::list<Molecule>& allMolecues();
@@ -134,6 +135,10 @@ public:
 	// thread-safe
 	double frameFittingTimeMS() const;
 
+	// get the time needed to fit a frame provieded by processImage in ms
+	// thread-safe
+	Milliseconds frameFittingTime() const;
+
 	// get the time needed to render a SMLM image provieded by processImage in ms
 	// thread-safe
 	double renderTimeMS() const;
@@ -144,6 +149,7 @@ public:
 	bool isRenderingEnabled() const;
 
 	Renderer& renderer();
+	const Renderer& renderer() const;
 	void setRenderScale(double scale);
 	void setRenderSize(int width, int height);
 
