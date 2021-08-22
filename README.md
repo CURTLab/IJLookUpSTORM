@@ -8,8 +8,8 @@ This is an example implementation for ImageJ 1.x.
 
 # Pre-Release
 Pre-Release ImageJ Plugin Version 0.1.2 for ImageJ 1.x (including dependencies) 
-* Window x64 [link to download](https://filebox.fhooecloud.at/index.php/s/MtTnwezEkeFC4Y7)
-* Linux x64 [link to download](https://filebox.fhooecloud.at/index.php/s/n85gL9RFtZRdtmz)
+* Window x64 [link to download](https://github.com/CURTLab/IJLookUpSTORM/releases/download/0.1.2/LookUpSTORM_-0.1.2-win64-jar-with-dependencies.zip)
+* Linux x64 [link to download](https://github.com/CURTLab/IJLookUpSTORM/releases/download/0.1.2/LookUpSTORM_-0.1.2-linux64-jar-with-dependencies.zip)
 
 # Installation
 Unpack the downloaded archive and copy the directories `lib` (containing `LookUpSTORM_CPPDLL.dll` or `libLookUpSTORM_CPPDLL.so` in their respective subdirectories `win64` and `linux64`) and `plugins` into your ImageJ installation directory (e.g. `C:/ImageJ`). Now, the plugin `LookUpSTORM_-0.1.2-jar-with-dependencies.jar` should be in the subdirectory `plugins` (e.g. `C:/ImageJ/plugins`).
