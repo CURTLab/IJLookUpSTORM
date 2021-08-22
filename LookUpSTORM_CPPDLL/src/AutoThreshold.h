@@ -46,18 +46,22 @@ public:
 	bool isEnabled() const;
 	void setEnabled(bool enabled);
 
-	void addMolecule(const Molecule& mol);
+	void addMolecule(const Molecule& mol, uint16_t frameMaxIntensity = 0);
 
 	double calculateThreshold() const;
 
 	void reset();
+
+	static constexpr uint16_t MAX_PEAK = 4000;
+	//static constexpr uint16_t MAX_PEAK = MAX_INTENSITY;
 
 private:
 	bool m_enabled;
 	double m_minIntensity;
 	double m_maxIntensity;
 	double m_hBin;
-	uint32_t m_histogram[MAX_INTENSITY];
+	uint32_t m_histogram[MAX_PEAK];
+
 };
 
 } // namespace LookUpSTORM

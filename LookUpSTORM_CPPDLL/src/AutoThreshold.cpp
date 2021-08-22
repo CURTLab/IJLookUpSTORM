@@ -37,7 +37,7 @@ AutoThreshold::AutoThreshold()
 	: m_enabled(false)
 	, m_minIntensity(MAX_INTENSITY)
 	, m_maxIntensity(0.0)
-	, m_hBin(2.0)
+	, m_hBin(1.0)
 	, m_histogram{{0}}
 {
 }
@@ -56,12 +56,12 @@ void AutoThreshold::setEnabled(bool enabled)
 	m_enabled = enabled;
 }
 
-void AutoThreshold::addMolecule(const Molecule& mol)
+void AutoThreshold::addMolecule(const Molecule& mol, uint16_t frameMaxIntensity)
 {
-	if (m_enabled && (mol.peak > 0) && (mol.peak < MAX_INTENSITY)) {
+	if (m_enabled && (mol.peak > 0) && (mol.peak < MAX_PEAK) && (frameMaxIntensity < MAX_PEAK)) {
 		m_minIntensity = std::min(m_minIntensity, mol.peak);
 		m_maxIntensity = std::max(m_maxIntensity, mol.peak);
-		const uint16_t bin = std::min<uint16_t>(std::floor(mol.peak / m_hBin), MAX_INTENSITY - 1);
+		const uint16_t bin = std::min<uint16_t>(std::floor(mol.peak / m_hBin), MAX_PEAK - 1);
 		++m_histogram[bin];
 	}
 }
@@ -101,8 +101,8 @@ void AutoThreshold::addMolecule(const Molecule& mol)
  ****************************************************************************/
 double AutoThreshold::calculateThreshold() const
 {
-	const uint16_t minIndex = std::min<uint16_t>(std::floor(m_minIntensity / m_hBin), MAX_INTENSITY - 1);
-	const uint16_t maxIndex = std::min<uint16_t>(std::floor(m_maxIntensity / m_hBin), MAX_INTENSITY - 1);
+	const uint16_t minIndex = std::min<uint16_t>(std::floor(m_minIntensity / m_hBin), MAX_PEAK - 1);
+	const uint16_t maxIndex = std::min<uint16_t>(std::floor(m_maxIntensity / m_hBin), MAX_PEAK - 1);
 
 	const uint16_t graylevel = maxIndex - minIndex + 1;
 
@@ -174,5 +174,5 @@ void AutoThreshold::reset()
 {
 	m_minIntensity = MAX_INTENSITY;
 	m_maxIntensity = 0.0;
-	std::fill_n(m_histogram, MAX_INTENSITY, 0u);
+	std::fill_n(m_histogram, MAX_PEAK, 0u);
 }
