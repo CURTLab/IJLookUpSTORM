@@ -6,8 +6,8 @@ This is an example implementation for ImageJ 1.x.
 
 ![Thumbnail](https://github.com/CURTLab/IJLookUpSTORM/blob/master/thumbnail_lookupstorm.png)
 
-# Pre-Release
-Pre-Release ImageJ Plugin Version 0.1.2 for ImageJ 1.x (including dependencies) 
+# Release
+Release ImageJ Plugin Version 0.1.2 for ImageJ 1.x (including dependencies) 
 * Window x64 [link to download](https://github.com/CURTLab/IJLookUpSTORM/releases/download/0.1.2/LookUpSTORM_-0.1.2-win64-jar-with-dependencies.zip)
 * Linux x64 [link to download](https://github.com/CURTLab/IJLookUpSTORM/releases/download/0.1.2/LookUpSTORM_-0.1.2-linux64-jar-with-dependencies.zip)
 
