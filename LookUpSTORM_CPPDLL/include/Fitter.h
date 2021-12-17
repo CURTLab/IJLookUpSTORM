@@ -31,6 +31,7 @@
 #define FITTER_H
 
 #include "Image.h"
+#include "LUT.h"
 
 namespace LookUpSTORM
 {
@@ -51,6 +52,7 @@ public:
 	bool fitSingle(const ImageU16& roi, Molecule& mol);
 
 	bool setLookUpTable(const double* data, size_t dataSize, bool allocated, int windowSize, double dLat, double dAx, double rangeLat, double rangeAx);
+	bool setLookUpTable(const LUT& lut);
 
 	// returns a pointer to the start of the LUT array
 	const double* lookUpTablePtr() const;

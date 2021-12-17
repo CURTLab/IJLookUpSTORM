@@ -29,12 +29,10 @@
 
 #include "LocalMaximumSearch.h"
 
-using namespace LookUpSTORM;
+#include <functional>
 
-LocalMaximumSearch::LocalMaximumSearch(int border, int radius)
-    : m_border(border), m_radius(radius)
+namespace LookUpSTORM
 {
-}
 
 template<class T>
 inline T localBackground(const T* data, int x, int y, int w, int h, int W, int H, int stride)
@@ -99,22 +97,18 @@ struct greater
 	bool operator()(const LocalMaximum& f1, const LocalMaximum& f2) { return f1.val > f2.val; }
 };
 
-
-std::list<LocalMaximum> LocalMaximumSearch::find(ImageU16 image, uint16_t threshold)
+template<class T>
+void nms(const Image<T>& image, int r, int b, std::function<void(T, int, int)> maxima)
 {
-    std::list<LocalMaximum> features;
-    const int r = m_radius;
-    const int b = m_border;
-    const int bg_radius = r + 1;
+	const int bg_radius = r + 1;
 
-    if (image.width() <= (2 * bg_radius + 2 * b + 1) || image.height() <= (2 * bg_radius + 2 * b + 1))
-        return features;
+	if (image.width() <= (2 * bg_radius + 2 * b + 1) || image.height() <= (2 * bg_radius + 2 * b + 1))
+		return;
 
-    const int w = image.width() - (b + 1);
-    const int h = image.height() - (b + 1);
+	const int w = image.width() - (b + 1);
+	const int h = image.height() - (b + 1);
 
-    LocalMaximum f;
-    uint16_t value, canidate, mean, localBg;
+	T value, canidate;
 
 	// A. Neubeck et.al., 'Efficient Non-MaximumSuppression', 2006, (2n+1)×(2n+1)-Block Algorithm
 	// with sorted insert into a list
@@ -143,20 +137,72 @@ std::list<LocalMaximum> LocalMaximumSearch::find(ImageU16 image, uint16_t thresh
 				}
 			}
 
-			//ImageConstView view(image, mi - 1 - bg_radius, mj - 1 - bg_radius, 2 * bg_radius, 2 * bg_radius);
-			localBg = localBackground(image.constData(), mi - 1, mj - 1, bg_radius, bg_radius, image.width(), image.height(), image.stride());
-			mean = centerMean(image.constData(), mi, mj, image.width(), image.height(), image.stride());
-			if ((canidate - localBg) < threshold || (mean - localBg) < threshold)
-				goto failed;
-
-			f = { canidate, localBg, mi, mj };
-			features.insert(std::lower_bound(features.begin(), features.end(), f, greater()), f);
+			maxima(canidate, mi, mj);
 
 		failed:;
 		}
 	}
+}
+
+}
+
+using namespace LookUpSTORM;
+
+LocalMaximumSearch::LocalMaximumSearch(int border, int radius)
+    : m_border(border), m_radius(radius)
+{
+}
+
+std::list<LocalMaximum> LocalMaximumSearch::find(ImageU16 image, uint16_t threshold)
+{
+    std::list<LocalMaximum> features;
+	const int bg_radius = m_radius + 1;
+	nms<uint16_t>(image, m_radius, m_border, 
+		[&](uint16_t canidate, int x, int y) {
+			uint16_t localBg = localBackground(image.constData(), x - 1, y - 1, bg_radius, bg_radius, image.width(), image.height(), image.stride());
+			uint16_t mean = centerMean(image.constData(), x, y, image.width(), image.height(), image.stride());
+			if ((canidate - localBg) < threshold || (mean - localBg) < threshold)
+				return;
+
+			LocalMaximum f = { canidate, localBg, x, y };
+			features.insert(std::lower_bound(features.begin(), features.end(), f, greater()), f);
+		});
 
     return features;
+}
+
+std::list<LocalMaximum> LocalMaximumSearch::find(const ImageU16& image, const ImageF32& filteredImage, float filterThreshold)
+{
+	std::list<LocalMaximum> features;
+
+	const int bg_radius = m_radius + 1;
+	nms<float>(filteredImage, m_radius, m_border, 
+		[&](float canidate, int x, int y) {
+
+			if (canidate < filterThreshold)
+				return;
+
+			uint16_t found = image(x, y);
+			uint16_t localBg = localBackground(image.constData(), x - 1, y - 1, bg_radius, bg_radius, image.width(), image.height(), image.stride());
+
+			LocalMaximum f = { found, localBg, x, y };
+			features.insert(std::lower_bound(features.begin(), features.end(), f, greater()), f);
+		});
+
+	return features;
+}
+
+std::list<LocalMaximum> LookUpSTORM::LocalMaximumSearch::findAll(const ImageU16& image)
+{
+	std::list<LocalMaximum> features;
+	const int bg_radius = m_radius + 1;
+	nms<uint16_t>(image, m_radius, m_border, 
+		[&](uint16_t canidate, int x, int y) {
+			uint16_t localBg = localBackground(image.constData(), x - 1, y - 1, bg_radius, bg_radius, image.width(), image.height(), image.stride());
+			features.push_back({ canidate, localBg, x, y });
+		});
+
+	return features;
 }
 
 int LocalMaximumSearch::border() const

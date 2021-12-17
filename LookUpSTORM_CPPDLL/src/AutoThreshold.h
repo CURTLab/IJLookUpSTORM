@@ -52,7 +52,7 @@ public:
 
 	void reset();
 
-	static constexpr uint16_t MAX_PEAK = 4000;
+	static constexpr const uint16_t MAX_PEAK = 4000;
 	//static constexpr uint16_t MAX_PEAK = MAX_INTENSITY;
 
 private:

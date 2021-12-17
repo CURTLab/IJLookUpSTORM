@@ -149,6 +149,7 @@
   <ItemGroup>
     <ClInclude Include="include\Calibration.h" />
     <ClInclude Include="include\LUT.h" />
+    <ClInclude Include="include\Wavelet.h" />
     <ClInclude Include="src\atlas\atlas_enum.h" />
     <ClInclude Include="src\atlas\atlas_refalias1.h" />
     <ClInclude Include="src\atlas\atlas_refalias2.h" />
@@ -235,6 +236,7 @@
     <ClCompile Include="src\Rect.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Vector.cpp" />
+    <ClCompile Include="src\Wavelet.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

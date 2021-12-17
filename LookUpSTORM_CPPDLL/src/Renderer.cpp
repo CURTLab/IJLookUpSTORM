@@ -53,7 +53,7 @@ public:
     void renderTile(const Rect& tile);
     uint32_t pixelCached(int x, int y) const;
 
-    ImageU32 image;
+    ImageU32 histogramImage;
     ImageU32 renderImage;
 
     float corner;
@@ -70,9 +70,9 @@ public:
     inline void setTD(double x, double y, double z)
     {
         const int dx = (int)std::round(x * scaleX), dy = (int)std::round(y * scaleY);
-        if (image.rect().contains(dx, dy)) {
+        if (histogramImage.rect().contains(dx, dy)) {
             const uint32_t zi = uint32_t((z - minZ) / dZ) + 1;
-            auto& pixel = image(dx, dy);
+            auto& pixel = histogramImage(dx, dy);
             pixel = std::max(zi, pixel);
         }
     }
@@ -80,9 +80,9 @@ public:
     inline void setBU(double x, double y, double z)
     {
         const int dx = (int)std::round(x * scaleX), dy = (int)std::round(y * scaleY);
-        if (image.rect().contains(dx, dy)) {
+        if (histogramImage.rect().contains(dx, dy)) {
             const uint32_t zi = uint32_t((z - minZ) / dZ) + 1;
-            auto& pixel = image(dx, dy);
+            auto& pixel = histogramImage(dx, dy);
             pixel = std::min(zi, pixel);
         }
     }
@@ -90,10 +90,10 @@ public:
     inline void setXZ(double x, double y, double z)
     {
         const int dx = (int)std::round(x * scaleX);
-        const int dz = (int)std::round(z / dZ * scaleY) + image.height() / 2;
-        if (image.rect().contains(dx, dz)) {
+        const int dz = (int)std::round(z / dZ * scaleY) + histogramImage.height() / 2;
+        if (histogramImage.rect().contains(dx, dz)) {
             const uint32_t zi = uint32_t((z - minZ) / dZ) + 1;
-            auto& pixel = image(dx, dz);
+            auto& pixel = histogramImage(dx, dz);
             pixel = std::max(zi, pixel);
         }
     }
@@ -101,10 +101,10 @@ public:
     inline void setYZ(double x, double y, double z)
     {
         const int dy = (int)std::round(y * scaleX);
-        const int dz = (int)std::round(z / dZ * scaleY) + image.height() / 2;
-        if (image.rect().contains(dy, dz)) {
+        const int dz = (int)std::round(z / dZ * scaleY) + histogramImage.height() / 2;
+        if (histogramImage.rect().contains(dy, dz)) {
             const uint32_t zi = uint32_t((z - minZ) / dZ) + 1;
-            auto& pixel = image(dy, dz);
+            auto& pixel = histogramImage(dy, dz);
             pixel = std::max(zi, pixel);
         }
     }
@@ -144,24 +144,24 @@ void RendererPrivate::renderTile(const Rect& tile)
 
 uint32_t RendererPrivate::pixelCached(int x, int y) const
 {
-    if ((x < 1) || (y < 1) || (x >= image.width() - 1) || (y >= image.height() - 1))
+    if ((x < 1) || (y < 1) || (x >= histogramImage.width() - 1) || (y >= histogramImage.height() - 1))
         return BLACK;
 
-    const uint32_t* line = image.ptr(x, y);
+    const uint32_t* line = histogramImage.ptr(x, y);
     if (*line) return colorLUT.cachedRgbByIndex((*line) - 1);
 
     const int startX = x - 1;
-    line = image.ptr(startX, y - 1);
+    line = histogramImage.ptr(startX, y - 1);
     if (*line) return colorCornerLUT.cachedRgbByIndex((*line) - 1);
     else if (*(++line)) return colorCrossLUT.cachedRgbByIndex((*line) - 1);
     else if (*(++line)) return colorCornerLUT.cachedRgbByIndex((*line) - 1);
 
-    line = image.ptr(startX, y);
+    line = histogramImage.ptr(startX, y);
     if (*line) return colorCrossLUT.cachedRgbByIndex((*line) - 1);
     line += 2;
     if (*line) return colorCrossLUT.cachedRgbByIndex((*line) - 1);
 
-    line = image.ptr(startX, y + 1);
+    line = histogramImage.ptr(startX, y + 1);
     if (*line) return colorCornerLUT.cachedRgbByIndex((*line) - 1);
     else if (*(++line)) return colorCrossLUT.cachedRgbByIndex((*line) - 1);
     else if (*(++line)) return colorCornerLUT.cachedRgbByIndex((*line) - 1);
@@ -182,19 +182,35 @@ LookUpSTORM::Renderer::~Renderer()
 
 void Renderer::release()
 {
-    d->image = ImageU32();
+    d->histogramImage = ImageU32();
     d->renderImage = ImageU32();
 }
 
-bool Renderer::isReady() const
+bool Renderer::isReady(bool verbose) const
 {
-    return !d->renderImage.isNull() && !d->image.isNull() && d->colorLUT.isCached();
+    if (!verbose)
+        return !d->renderImage.isNull() && !d->histogramImage.isNull() && d->colorLUT.isCached();
+
+    // verbose check
+    if (d->renderImage.isNull()) {
+        std::cerr << "Renderer: Render image is null!";
+        return false;
+    } 
+    else if (d->histogramImage.isNull()) {
+        std::cerr << "Renderer: Histogram image is null!";
+        return false;
+    }
+    else if (!d->colorLUT.isCached()) {
+        std::cerr << "Renderer: Colormap not generated!";
+        return false;
+    }
+    return true;
 }
 
 void Renderer::setSize(int width, int height, double scaleX, double scaleY)
 {
-    if (d->image.isNull() || (width != d->image.width()) || (height != d->image.height())) {
-        d->image = ImageU32(width, height, 0);
+    if (d->histogramImage.isNull() || (width != d->histogramImage.width()) || (height != d->histogramImage.height())) {
+        d->histogramImage = ImageU32(width, height, 0);
         d->scaleX = scaleX;
         d->scaleY = scaleY;
     }
@@ -226,25 +242,25 @@ void Renderer::setSigma(float sigma)
 
 int Renderer::imageWidth() const
 {
-    return d->image.width();
+    return d->histogramImage.width();
 }
 
 int Renderer::imageHeight() const
 {
-    return d->image.height();
+    return d->histogramImage.height();
 }
 
 void Renderer::set(double x, double y, double z)
 {
-    if (d->image.isNull())
+    if (d->histogramImage.isNull())
         return;
     std::lock_guard<std::mutex> guard(d->mutex);
 
     const int dx = (int)std::round(x * d->scaleX);
     const int dy = (int)std::round(y * d->scaleY);
-    if (d->image.rect().contains(dx, dy)) {
+    if (d->histogramImage.rect().contains(dx, dy)) {
         const uint32_t zi = uint32_t((z - d->minZ) / d->dZ) + 1;
-        auto& pixel = d->image(dx, dy);
+        auto& pixel = d->histogramImage(dx, dy);
         pixel = std::max(zi, pixel);
     }
 }
@@ -273,14 +289,14 @@ bool Renderer::updateImage(Rect region)
         return false;
     
     if (region.isNull()) {
-        d->render(d->image.rect());
+        d->render(d->histogramImage.rect());
     }
     else {
         // extend region by 1
         if (region.left() > 0) region.moveLeft(region.left() - 1);
         if (region.top() > 0) region.moveTop(region.top() - 1);
-        if (region.right() < d->image.width()-1) region.moveRight(region.right() + 1);
-        if (region.bottom() < d->image.height()-1) region.moveBottom(region.bottom() + 1);
+        if (region.right() < d->histogramImage.width()-1) region.moveRight(region.right() + 1);
+        if (region.bottom() < d->histogramImage.height()-1) region.moveBottom(region.bottom() + 1);
         d->render(region);
     }
     return true;
@@ -293,13 +309,13 @@ const uint32_t* Renderer::renderImagePtr() const
 
 void Renderer::clear()
 {
-    d->image.fill(0);
+    d->histogramImage.fill(0);
     d->renderImage.fill(BLACK);
 }
 
 const ImageU32 Renderer::rawImageHistogram() const
 {
-    return d->image;
+    return d->histogramImage;
 }
 
 ImageU32 Renderer::render(const std::list<Molecule>& mols, int width, int height, double scaleX, 
@@ -308,7 +324,7 @@ ImageU32 Renderer::render(const std::list<Molecule>& mols, int width, int height
     ImageU32 image(width, height);
     Renderer r;
     r.setRenderImage(image.data(), width, height, scaleX, scaleY);
-    r.setSettings(minZ, maxZ, dZ, sigma);
+    r.setSettings(minZ, maxZ, dZ, static_cast<float>(sigma));
 
     switch (projection)
     {

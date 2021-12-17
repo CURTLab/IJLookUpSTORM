@@ -43,6 +43,12 @@ namespace LookUpSTORM
 class ControllerPrivate;
 class LUT;
 
+struct Canidate {
+	uint16_t val;
+	uint16_t localBg;
+	Rect roi;
+};
+
 class DLL_DEF_LUT Controller final
 {
 public:
@@ -86,6 +92,11 @@ public:
 	// thread-safe, renders the localiation imaged each nth frame (see setFrameRenderUpdateRate)
 	// and if rendering is enabled (see setRenderingEnabled, default is true)
 	// returns true if image was updated
+	bool updateRenderer(int frame);
+
+	// thread-safe, renders the localiation imaged each nth frame (see setFrameRenderUpdateRate)
+	// and if rendering is enabled (see setRenderingEnabled, default is true)
+	// returns true if image was updated
 	bool renderToImage(ImageU32 image, int frame);
 
 	// thread-safe, updates the threshold each nth frame (see setAutoThresholdUpdateRate)
@@ -105,6 +116,15 @@ public:
 	void setAutoThresholdUpdateRate(int rate);
 	// thread-safe
 	int autoThresholdUpdateRate() const;
+
+	// thread-safe
+	void setWaveletFilterEnabled(bool enabled);
+	// thread-safe
+	bool isWaveletFilterEnabled() const;
+
+	// wavelet threshold factor (typical values 0-2, default is 1.25) for standard derivation of input image
+	void setWaveletFactor(float factor);
+	float waveletFactor() const;
 
 	// thread-safe
 	void setVerbose(bool verbose);
@@ -148,6 +168,7 @@ public:
 	// thread-safe
 	bool isRenderingEnabled() const;
 
+	// renderer helper
 	Renderer& renderer();
 	const Renderer& renderer() const;
 	void setRenderScale(double scale);
@@ -164,6 +185,9 @@ public:
 
 	// restore intial conditions to fit a new image
 	void reset();
+
+	// find canidates in an image using non-maximum suppression
+	static std::vector<Canidate> findCanidates(ImageU16 image, size_t windowSize, uint16_t threshold);
 
 #ifdef JNI_EXPORT_LUT
 private:

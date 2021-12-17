@@ -25,6 +25,7 @@ set(SOURCE_FILES
 	LookUpSTORM_CPPDLL/src/Renderer.cpp
 	LookUpSTORM_CPPDLL/src/Vector.cpp
 	LookUpSTORM_CPPDLL/src/LUT.cpp
+	LookUpSTORM_CPPDLL/src/Wavelet.cpp
 )
 
 set(PUBLIC_LIB_HEADERS 
@@ -37,6 +38,7 @@ set(PUBLIC_LIB_HEADERS
 	LookUpSTORM_CPPDLL/include/Rect.h
 	LookUpSTORM_CPPDLL/include/Renderer.h
 	LookUpSTORM_CPPDLL/include/LUT.h
+	LookUpSTORM_CPPDLL/include/Wavelet.h
 )
 
 add_definitions(-DNO_LAPACKE_LUT)

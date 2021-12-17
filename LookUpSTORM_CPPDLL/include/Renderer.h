@@ -48,7 +48,7 @@ public:
 	void release();
 
 	// returns true if setSize and setSettings is called
-	bool isReady() const;
+	bool isReady(bool verbose = false) const;
 
 	// these functions have to be called!
 	void setSize(int width, int height, double scaleX, double scaleY);

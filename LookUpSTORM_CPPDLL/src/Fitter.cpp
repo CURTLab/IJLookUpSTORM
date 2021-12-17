@@ -342,6 +342,13 @@ bool Fitter::setLookUpTable(const double* data, size_t dataSize, bool allocated,
 	return true;
 }
 
+bool LookUpSTORM::Fitter::setLookUpTable(const LUT& lut)
+{
+	if (!lut.isValid())
+		return false;
+	return setLookUpTable(lut.ptr(), lut.dataSize(), true, lut.windowSize(), lut.dLat(), lut.dAx(), lut.rangeLat(), lut.rangeAx());
+}
+
 const double* Fitter::lookUpTablePtr() const
 {
 	return d->lookup;

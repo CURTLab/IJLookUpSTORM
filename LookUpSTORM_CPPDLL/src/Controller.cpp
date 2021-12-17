@@ -38,6 +38,7 @@
 #include "LinearMath.h"
 #include "LUT.h"
 #include "AutoThreshold.h"
+#include "Wavelet.h"
 
 #undef min
 #undef max
@@ -59,6 +60,8 @@ public:
         , timeoutMS(250.0)
         , autoThresholdUpdateRate(10)
         , enableRendering(true)
+        , waveletFactor(1.25f)
+        , enableWavelet(false)
         , verbose(false)
     {
         numberOfDetectedLocs.store(0);
@@ -76,6 +79,9 @@ public:
     std::atomic<double> renderTimeMS;
     std::atomic<int> renderUpdateRate;
     std::atomic<bool> enableRendering;
+    Wavelet wavelet;
+    float waveletFactor;
+    std::atomic<bool> enableWavelet;
     std::atomic<double> timeoutMS;
     std::list<Molecule> mols;
     AutoThreshold autoThreshold;
@@ -234,8 +240,19 @@ bool Controller::processImage(ImageU16 image, int frame)
     const uint16_t threshold = d->threshold.load();
     const double timeoutMS = d->timeoutMS.load();
 
-    //auto features = d->nms.find(image, d->threshold);
-    auto features = d->nms.find(image, 0);
+    std::list<LocalMaximum> features;
+    if (d->enableWavelet.load()) {
+        const ImageF32 &filtered = d->wavelet.filter(image);
+        const float waveletThreshold = d->autoThreshold.isEnabled() ? 0.f : d->waveletFactor * d->wavelet.inputSTD();
+        features = d->nms.find(image, filtered, waveletThreshold);
+    }
+    else {
+        // at the moment only use find all for auto threshold
+        if (d->autoThreshold.isEnabled())
+            features = d->nms.findAll(image);
+        else
+            features = d->nms.find(image, threshold);
+    }
 
     Molecule m;
     Rect bounds = image.rect();
@@ -314,6 +331,7 @@ void Controller::setImageSize(int width, int height)
 {
     d->imageWidth = width;
     d->imageHeight = height;
+    d->wavelet.setSize(width, height);
 }
 
 int Controller::imageWidth() const
@@ -328,16 +346,20 @@ int Controller::imageHeight() const
 
 bool Controller::renderToImage(ImageU32 image, int frame)
 {
+    d->renderer.setRenderImage(image);
+    return updateRenderer(frame);
+}
+
+bool Controller::updateRenderer(int frame)
+{
     const int updateRate = d->renderUpdateRate.load();
 
     // update SMLM image
-    if (!d->isSMLMImageReady && d->enableRendering.load() && 
+    if (!d->isSMLMImageReady && d->enableRendering.load() &&
         ((updateRate <= 1) || ((d->changedRegion.area() > 25) && (frame > 1) && (frame % updateRate == 0)))
         ) {
 
         const auto t1 = std::chrono::high_resolution_clock::now();
-
-        d->renderer.setRenderImage(image);
 
         d->renderer.updateImage();
         d->changedRegion = {};
@@ -360,7 +382,7 @@ bool Controller::updateAutoThreshold(int frame)
     if (d->autoThreshold.isEnabled() &&
         ((updateRate <= 1) || ((frame > 1) && (frame % updateRate == 0)))
         ) {
-        d->threshold.store(std::min<uint16_t>(std::ceil(d->autoThreshold.calculateThreshold()), MAX_INTENSITY));
+        d->threshold.store(std::min(static_cast<uint16_t>(std::ceil(d->autoThreshold.calculateThreshold())), MAX_INTENSITY));
         return true;
     }
     return false;
@@ -394,6 +416,26 @@ void Controller::setAutoThresholdUpdateRate(int rate)
 int Controller::autoThresholdUpdateRate() const
 {
     return d->autoThresholdUpdateRate.load();
+}
+
+void Controller::setWaveletFilterEnabled(bool enabled)
+{
+    d->enableWavelet.store(enabled);
+}
+
+bool Controller::isWaveletFilterEnabled() const
+{
+    return d->enableWavelet.load();
+}
+
+void Controller::setWaveletFactor(float factor)
+{
+    d->waveletFactor = factor;
+}
+
+float Controller::waveletFactor() const
+{
+    return d->waveletFactor;
 }
 
 void Controller::setVerbose(bool verbose)
@@ -605,4 +647,22 @@ void Controller::reset()
     d->imageHeight = 0;
     d->frameFittingTimeMS = 0;
     d->timeoutMS = 250;
+}
+
+std::vector<Canidate> Controller::findCanidates(ImageU16 image, size_t windowSize, uint16_t threshold)
+{
+    LocalMaximumSearch nms(windowSize / 2, windowSize * 3 / 4);
+    auto features = nms.find(image, threshold);
+    std::vector<Canidate> result(features.size());
+    auto it = result.begin();
+    Rect bounds = image.rect();
+    for (const auto &f : features) {
+        Rect region(int(f.x) - windowSize / 2, int(f.y) - windowSize / 2, windowSize, windowSize);
+        region.moveInside(bounds);
+        it->localBg = f.localBg;
+        it->val = f.val;
+        it->roi = region;
+        ++it;
+    }
+    return result;
 }

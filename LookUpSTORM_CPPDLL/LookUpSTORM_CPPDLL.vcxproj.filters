@@ -148,6 +148,7 @@
     <ClCompile Include="src\brent.cpp" />
     <ClCompile Include="src\LUT.cpp" />
     <ClCompile Include="src\AutoThreshold.cpp" />
+    <ClCompile Include="src\Wavelet.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ColorMap.h" />
@@ -199,6 +200,7 @@
     <ClInclude Include="src\brent.hpp" />
     <ClInclude Include="include\LUT.h" />
     <ClInclude Include="src\AutoThreshold.h" />
+    <ClInclude Include="include\Wavelet.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ATLAS">

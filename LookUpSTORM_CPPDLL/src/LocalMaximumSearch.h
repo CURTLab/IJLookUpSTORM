@@ -47,7 +47,12 @@ class LocalMaximumSearch
 {
 public:
 	LocalMaximumSearch(int border, int radius);
+
 	std::list<LocalMaximum> find(ImageU16 image, uint16_t threshold);
+
+	std::list<LocalMaximum> find(const ImageU16 &image, const ImageF32 &filteredImage, float filterThreshold);
+
+	std::list<LocalMaximum> findAll(const ImageU16& image);
 
 	int border() const;
 	void setBorder(int border);
