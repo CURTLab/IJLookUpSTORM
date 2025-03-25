@@ -140,7 +140,7 @@ void Fitter::release()
 		d->tableAllocated = false;
 	}
 	d->x0 = Vector(5, Uninitialized);
-	d->x0 = Vector(5, Uninitialized);
+	d->x1 = Vector(5, Uninitialized);
 	d->JTJ = Matrix(5, 5, Uninitialized);
 	d->J = {};
 	d->countIndex = 0;
