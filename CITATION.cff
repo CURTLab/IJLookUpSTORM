@@ -1,6 +1,5 @@
 cff-version: 1.2.0
 message: "If you use this work in your research, please cite the following article:"
-type: article
 title: "Real-Time 3D Single-Molecule Localization Microscopy Analysis Using Lookup Tables"
 authors:
   - family-names: "Hauser"
@@ -9,12 +8,25 @@ authors:
   - family-names: "Jacak"
     given-names: "Jaroslaw"
     orcid: "https://orcid.org/0000-0002-4989-1276"
-version: "1.0"
+version: "0.1.2"
 doi: 10.1364/BOE.424016
 date-released: 2021-07-16
-url: https://doi.org/10.1364/BOE.424016
-journal: "Biomedical Optics Express"
-volume: "12"
-issue: "8"
-page-range: "4955-4968"
-year: 2021
+url: "https://github.com/CURTLab/IJLookUpSTORM"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Hauser"
+    given-names: "Fabian"
+    orcid: "https://orcid.org/0000-0002-0992-0861"
+  - family-names: "Jacak"
+    given-names: "Jaroslaw"
+    orcid: "https://orcid.org/0000-0002-4989-1276"
+  journal: "Biomedical Optics Express"
+  start: 4955
+  end: 4968
+  title: "Real-Time 3D Single-Molecule Localization Microscopy Analysis Using Lookup Tables"
+  volume: 12
+  issue: 8
+  year: 2021
+  doi: "10.1364/BOE.424016"
+  
