@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this work in your research, please cite the following article:"
+authors:
+  - family-names: "Hauser"
+    given-names: "Fabian"
+    orcid: "https://orcid.org/0000-0002-0992-0861"
+  - family-names: "Jacak"
+    given-names: "Jaroslaw"
+    orcid: "https://orcid.org/0000-0002-4989-1276"
+title: "Real-Time 3D Single-Molecule Localization Microscopy Analysis Using Lookup Tables"
+version: "1.0"
+doi: 10.1364/BOE.424016
+date-released: 2021-07-16
+url: https://doi.org/10.1364/BOE.424016
